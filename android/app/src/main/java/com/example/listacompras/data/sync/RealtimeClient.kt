@@ -8,7 +8,9 @@ import com.example.listacompras.domain.repository.SyncScheduler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
@@ -74,7 +76,15 @@ class RealtimeClient(
 
     private class SessionEnded : Exception()
 
-    override suspend fun run() {
+    override suspend fun run() = coroutineScope {
+        // Reachability must not wait for the connect loop to restart: if that restart is delayed,
+        // the status would keep showing the stale "Reachable" (i.e. "Synced") while disconnected.
+        launch {
+            network.collect { online ->
+                log("Realtime network=$online")
+                if (!online) reachability.markUnknown()
+            }
+        }
         // Connect only with a token *and* a network. Every offline -> online change (and every new
         // token) starts a fresh loop with no accumulated backoff. This also kills a "zombie" stream:
         // an idle connection through the VPN can survive airplane mode without ever erroring.
@@ -82,6 +92,7 @@ class RealtimeClient(
             .distinctUntilChanged()
             .collectLatest { token ->
                 if (token != null) {
+                    log("Realtime loop started")
                     reachability.markUnknown()
                     connectLoop()
                 }
@@ -89,6 +100,14 @@ class RealtimeClient(
     }
 
     private suspend fun connectLoop() {
+        try {
+            reconnectForever()
+        } finally {
+            log("Realtime loop stopped")
+        }
+    }
+
+    private suspend fun reconnectForever() {
         var attempt = 0
         while (true) {
             try {

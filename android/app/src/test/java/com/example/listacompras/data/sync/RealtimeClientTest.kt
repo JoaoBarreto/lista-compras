@@ -8,6 +8,7 @@ import com.example.listacompras.data.repository.FakeActiveList
 import com.example.listacompras.data.repository.FakeItemDao
 import com.example.listacompras.data.repository.FakePendingOpDao
 import com.example.listacompras.data.repository.TransactionRunner
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -38,6 +39,7 @@ class RealtimeClientTest {
     private val posts = CopyOnWriteArrayList<Post>()
     private val pulls = AtomicInteger()
     private var pullResult = SyncOutcome.Done
+    private var pullGate: CompletableDeferred<Unit>? = null
     private var subscribeCode = 204
     private var eventForFirstStream: String? = null
     private var notEventStream = false
@@ -99,7 +101,7 @@ class RealtimeClientTest {
             network = network,
             reachability = reachability,
             applier = applier,
-            pull = FullPull { pulls.incrementAndGet(); pullResult },
+            pull = FullPull { pulls.incrementAndGet(); pullGate?.await(); pullResult },
             scheduler = scheduler,
             json = json,
             backoff = Backoff { attempt -> backoffAttempts += attempt; 5 },
@@ -262,5 +264,50 @@ class RealtimeClientTest {
             awaitUntil { backoffAttempts.size > before }
             assertEquals(0, backoffAttempts[before])
         }
+    }
+
+    @Test
+    fun `reachability resets to Unknown as soon as the network drops`() {
+        runClient {
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+
+            network.value = false
+
+            awaitUntil { reachability.state.value == Reachability.Unknown }
+        }
+    }
+
+    @Test
+    fun `after the network returns the state is not Reachable until the pull completes`() {
+        runClient {
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+            pullGate = CompletableDeferred()
+
+            network.value = false
+            awaitUntil { reachability.state.value == Reachability.Unknown }
+            network.value = true
+            // A new connection subscribes and then blocks in the pull; nothing may claim Reachable.
+            val pullsBefore = pulls.get()
+            awaitUntil { pulls.get() > pullsBefore }
+            delay(150)
+            assertEquals(Reachability.Unknown, reachability.state.value)
+
+            pullGate!!.complete(Unit)
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+        }
+    }
+
+    @Test
+    fun `the timeline is logged for diagnosis`() {
+        runClient {
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+            network.value = false
+            awaitUntil { logs.any { it == "Realtime loop stopped" } }
+            network.value = true
+            awaitUntil { logs.count { it == "Realtime loop started" } >= 2 }
+        }
+
+        assertTrue(logs.contains("Realtime network=false"))
+        assertTrue(logs.contains("Realtime network=true"))
     }
 }
