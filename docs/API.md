@@ -16,6 +16,8 @@ Referência oficial: documentação da API do PocketBase (confirmar detalhes par
 ```
 Resposta: `{ "token": "...", "record": { "id": "...", "name": "...", ... } }`
 
+Credenciais erradas devolvem **400** (`"Failed to authenticate."`), não 401.
+
 ### Renovar token
 `POST /api/collections/users/auth-refresh` (autenticado) → novo `token` + `record`.
 
@@ -81,7 +83,10 @@ Notas de implementação (`okhttp-sse`):
 | 404 | Registo inexistente | `DELETE`: ok; `PATCH`: descartar |
 | 5xx / timeout | Servidor/rede | Retry com backoff |
 
-## Retrofit (esboço)
+## Retrofit
+
+Implementação em `data/remote/`: `PocketBaseApi` (interface abaixo), `PocketBaseApiFactory` (Retrofit + `Json { ignoreUnknownKeys; explicitNulls = false }`), `AuthInterceptor` (lê o token de um `TokenProvider`) e `PocketBaseDates` (datas `"2026-10-29 12:34:56.789Z"` ↔ `Instant`). Os campos opcionais do `ItemDto` a `null` não são enviados no `POST`. O PocketBase devolve `""` para campos de texto/relação/select vazios; converter para `null` é responsabilidade do repositório.
+
 
 ```kotlin
 interface PocketBaseApi {

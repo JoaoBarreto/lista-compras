@@ -77,6 +77,10 @@ ui  ──►  domain  ◄──  data
 
 - Duas contas criadas manualmente pelo superuser no PocketBase; registo público desativado.
 - Login com email/password → token guardado de forma segura (DataStore + cifra com Android Keystore).
+  - `TokenStore` (`data/auth`) guarda o token cifrado (AES-256/GCM, chave não exportável no Keystore, via `TokenCipher`) e o `userId`/nome (necessários para `added_by`/`checked_by`). Mantém o valor em memória para o `AuthInterceptor` o ler de forma síncrona.
+  - Token ilegível (chave perdida, reinstalação) conta como sessão terminada, sem crash. O ficheiro `datastore/auth.preferences_pb` está excluído dos backups, porque a chave do Keystore não é copiada.
+  - A navegação é conduzida por `AuthRepository.authState` (`Loading`/`LoggedOut`/`LoggedIn`): login, logout e, futuramente, falha de refresh limitam-se a mudar este estado.
+  - Credenciais erradas: o PocketBase responde **400** (não 401) em `auth-with-password`.
 - Interceptor OkHttp adiciona o cabeçalho `Authorization`.
 - Token renovado com `auth-refresh` quando perto de expirar ou ao receber 401.
 

@@ -2,7 +2,11 @@
     <string name="app_name">ListaCompras</string>
 
     <string name="login_title">Iniciar sessão</string>
-    <string name="login_placeholder">Ecrã de início de sessão (provisório)</string>
+    <string name="login_email_label">Email</string>
+    <string name="login_password_label">Palavra-passe</string>
+    <string name="login_error_invalid_credentials">Email ou palavra-passe incorretos.</string>
+    <string name="login_error_network">Não foi possível contactar o servidor. Verifica se o Tailscale está ligado.</string>
+    <string name="login_error_unknown">Ocorreu um erro inesperado. Tenta novamente.</string>
     <string name="login_button_enter">Entrar</string>
 
     <string name="shopping_title">Compras</string>

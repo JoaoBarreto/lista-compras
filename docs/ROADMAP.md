@@ -32,9 +32,9 @@ Docs: [ANDROID_SETUP](ANDROID_SETUP.md), [ARCHITECTURE](ARCHITECTURE.md)
 ## Fase 2 · Rede e autenticação
 Docs: [API](API.md)
 
-- [ ] **2.1** DTOs, `PocketBaseApi`, `AuthInterceptor`, parser de datas do PocketBase
+- [x] **2.1** DTOs, `PocketBaseApi`, `AuthInterceptor`, parser de datas do PocketBase
   - ✔ Testes com MockWebServer para login, listar, criar, atualizar, apagar
-- [ ] **2.2** `TokenStore` + `AuthRepository` + ecrã de login
+- [x] **2.2** `TokenStore` + `AuthRepository` + ecrã de login
   - ✔ Login real contra o servidor; token persiste após fechar a app; erros mostram mensagem clara
 - [ ] **2.3** Renovação de token e tratamento de 401
   - ✔ Teste unitário: 401 → refresh → repete pedido; refresh falhado → volta ao login
