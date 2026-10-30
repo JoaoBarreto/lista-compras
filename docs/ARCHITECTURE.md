@@ -58,7 +58,14 @@ ui  ──►  domain  ◄──  data
 ### Regras
 
 1. **IDs no cliente:** itens criados offline recebem um ID de 15 caracteres `[a-z0-9]`, aceite pelo PocketBase no `POST`.
-2. **Coalescência:** várias operações sobre o mesmo item podem ser fundidas antes de enviar (ex.: `CREATE` + `UPDATE` → um `CREATE`; `CREATE` + `DELETE` → nada).
+2. **Coalescência** (`OutboxCoalescer`, `data/repository`): várias operações sobre o mesmo item são fundidas antes de enviar. Sobrevive sempre uma linha existente (mantém o `opId`); só o `payloadJson` muda.
+   - `CREATE` + `UPDATE`… → um `CREATE` com os patches fundidos (um `checked_by` vazio é omitido)
+   - `CREATE` + … + `DELETE` → nada
+   - `UPDATE`… → um `UPDATE` com os patches fundidos (o último valor de cada campo ganha)
+   - `UPDATE`… + `DELETE` → só o `DELETE`
+   - **`CREATE` já tentado (`attempts > 0`) fica congelado:** pode já existir no servidor (a resposta pode ter-se perdido). Não se fundem `UPDATE`s nele (um reenvio seria rejeitado por id duplicado) e um `DELETE` posterior mantém-se (senão ficava um item fantasma no servidor).
+   - O congelamento só funciona se `attempts > 0` significar "pode ter chegado ao servidor": o `SyncWorker` tem de gravar `incrementAttempts` **antes** de enviar o pedido (se só incrementasse após a resposta, um worker morto a meio do `POST` deixava `attempts == 0` e o `CREATE`+`DELETE` seguinte desaparecia, deixando um item fantasma). Também só pode correr um worker de cada vez (trabalho único).
+   - Corre no início de cada execução do `SyncWorker`, antes de enviar seja o que for (assim nenhuma operação está em voo). A ligação ao worker é feita na 4.1.
 3. **Pull completo:** ao abrir a app, ao reconectar e após esvaziar o outbox, fazer `GET` da lista completa (são centenas de itens, no máximo) e reconciliar: o remoto substitui o local, **exceto** itens com operações em `pending_ops`.
    - Isto também resolve apagamentos feitos noutro dispositivo enquanto este estava offline (um filtro por `updated` não os apanharia).
 4. **Conflitos:** *last-write-wins* ao nível do campo enviado. É aceitável para dois utilizadores e operações idempotentes (marcar/desmarcar).

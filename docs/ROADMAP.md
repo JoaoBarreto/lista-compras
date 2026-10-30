@@ -44,9 +44,9 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 
 - [x] **3.1** Room: `ItemEntity`, `PendingOpEntity`, `SyncMetaEntity`, DAOs
   - ✔ Testes instrumentados dos DAOs
-- [ ] **3.2** `ItemRepository`: `observeItems()`, `add`, `setChecked`, `delete`, `clearChecked`, tudo com escrita local + outbox na mesma transação
+- [x] **3.2** `ItemRepository`: `observeItems()`, `add`, `setChecked`, `delete`, `clearChecked`, tudo com escrita local + outbox na mesma transação
   - ✔ Testes unitários: cada operação altera `items` e cria a `pending_op` correta
-- [ ] **3.3** `OutboxCoalescer`
+- [x] **3.3** `OutboxCoalescer`
   - ✔ Testes: `CREATE+UPDATE`→`CREATE`, `CREATE+DELETE`→nada, `UPDATE+UPDATE`→um `UPDATE`
 
 ## Fase 4 · Sincronização e realtime

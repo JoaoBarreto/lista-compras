@@ -49,6 +49,16 @@ class PendingOpDaoTest : DaoTestBase() {
     }
 
     @Test
+    fun updatePayloadChangesOnlyThatRow() = runTest {
+        val a = dao.insert(op("a"))
+        dao.insert(op("b"))
+
+        dao.updatePayload(a, "{\"checked\":true}")
+
+        assertEquals(listOf("{\"checked\":true}", "{}"), dao.getAll().map { it.payloadJson })
+    }
+
+    @Test
     fun deleteForItemKeepsOtherItems() = runTest {
         dao.insert(op("a"))
         dao.insert(op("b"))
