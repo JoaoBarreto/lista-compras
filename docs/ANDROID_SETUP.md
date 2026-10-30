@@ -18,7 +18,7 @@ Usar `gradle/libs.versions.toml` (version catalog). **Confirmar a última versã
 | Lifecycle | `lifecycle-runtime-compose`, `lifecycle-viewmodel-compose` |
 | DI | Hilt (`hilt-android`, `hilt-compiler`, `hilt-navigation-compose`, `hilt-work`; o `androidx.hilt:hilt-compiler` 1.4.0 é necessário para gerar a factory do `@HiltWorker`) |
 | Local | Room (`room-runtime`, `room-ktx`, `room-compiler` via KSP) |
-| Rede | Retrofit, `converter-kotlinx-serialization`, OkHttp, `okhttp-sse`, `logging-interceptor` (só debug) |
+| Rede | Retrofit, `converter-kotlinx-serialization`, OkHttp, `okhttp-sse` (5.5.1, mesma versão do OkHttp), `logging-interceptor` (só debug) |
 | Serialização | `kotlinx-serialization-json` |
 | Coroutines | `kotlinx-coroutines-android` (fixada na mesma versão dos testes; evita que a app resolva um `core` antigo incompatível com `kotlinx-coroutines-test`) |
 | Background | `work-runtime-ktx` 2.12.0 (`androidx.hilt:hilt-work`/`hilt-compiler` 1.4.0; versões estáveis confirmadas no Google Maven) |

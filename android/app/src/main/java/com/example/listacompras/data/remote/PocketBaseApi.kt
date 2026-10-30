@@ -5,6 +5,7 @@ import com.example.listacompras.data.remote.dto.ItemDto
 import com.example.listacompras.data.remote.dto.ListDto
 import com.example.listacompras.data.remote.dto.ListResponse
 import com.example.listacompras.data.remote.dto.LoginRequest
+import com.example.listacompras.data.remote.dto.SubscribeRequest
 import kotlinx.serialization.json.JsonObject
 import retrofit2.Response
 import retrofit2.http.Body
@@ -52,6 +53,13 @@ interface PocketBaseApi {
     /** Returns 204 on success. Callers treat 404 as success too. */
     @DELETE("api/collections/items/records/{id}")
     suspend fun deleteItem(@Path("id") id: String): Response<Unit>
+
+    /**
+     * Registers the realtime subscriptions of a connected SSE client (204 on success, 404 for an
+     * unknown client id). The `Authorization` header sent here authorizes the whole subscription.
+     */
+    @POST("api/realtime")
+    suspend fun subscribe(@Body body: SubscribeRequest): Response<Unit>
 
     companion object {
         /** Filter selecting the items of one list, e.g. `list="abc123"`. */

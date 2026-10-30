@@ -6,6 +6,7 @@ import com.example.listacompras.data.remote.dto.ItemDto
 import com.example.listacompras.data.remote.dto.ListDto
 import com.example.listacompras.data.remote.dto.ListResponse
 import com.example.listacompras.data.remote.dto.LoginRequest
+import com.example.listacompras.data.remote.dto.SubscribeRequest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -81,6 +82,7 @@ class FakePocketBaseApi : PocketBaseApi {
     private fun deleteNow(id: String): Response<Unit> =
         if (server.remove(id) != null) Response.success(Unit) else Response.error(404, "".toResponseBody())
 
+    override suspend fun subscribe(body: SubscribeRequest): Response<Unit> = error("not used")
     override suspend fun login(body: LoginRequest): AuthResponse = error("not used")
     override suspend fun refresh(): AuthResponse = error("not used")
     override suspend fun listLists(sort: String, perPage: Int): ListResponse<ListDto> = error("not used")

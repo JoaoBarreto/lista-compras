@@ -65,23 +65,28 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 
 ## Realtime (SSE)
 
-Não é WebSocket. Fluxo:
+Não é WebSocket. Fluxo (verificado na documentação oficial, v0.41; **não confirmado contra a versão exata do servidor**):
 
-1. `GET /api/realtime` com `Accept: text/event-stream`. O primeiro evento é `PB_CONNECT`, com `data: {"clientId":"..."}`.
-2. `POST /api/realtime` (com `Authorization`) a registar subscrições:
+1. `GET /api/realtime` com `Accept: text/event-stream`. O primeiro evento é `PB_CONNECT`, com `data: {"clientId":"..."}` (o SDK JS lê o id também do campo SSE `id:`; o cliente aceita ambos).
+2. `POST /api/realtime` (com `Authorization`) a registar subscrições; sucesso = **204**, `clientId` desconhecido ou expirado = **404**:
    ```json
-   { "clientId": "<clientId>", "subscriptions": ["items"] }
+   { "clientId": "<clientId>", "subscriptions": ["items/*"] }
    ```
-3. Chegam eventos com o nome da subscrição (`items`) e dados:
+   O tópico para todos os registos da collection é **`items/*`** (formato `COLECAO/*` ou `COLECAO/ID`). A forma `items` sem `/*` está obsoleta no servidor e a documentação não a menciona.
+3. Chegam eventos cujo nome (`event:`) é o tópico subscrito (`items/*`) e dados:
    ```json
    { "action": "create" | "update" | "delete", "record": { ... } }
    ```
+   O formato exato do `data` não está descrito na documentação; vem do comportamento do SDK. **Confirmar com um evento real** (ex.: editar um item no dashboard e ver o log `Realtime`). O cliente aceita qualquer nome de evento que não seja `PB_CONNECT` e ignora `data` que não consiga interpretar.
+
+Regras de acesso: a `listRule` da collection é avaliada para cada evento, com a autenticação guardada no `POST`.
 
 Notas de implementação (`okhttp-sse`):
 
 - Usar `EventSources.createFactory(client)` com um `OkHttpClient` com `readTimeout(0)` (sem timeout de leitura).
+- **A autorização é fixada no `POST`**, não no `GET`. Se o token mudar (refresh ou novo login), há que voltar a fazer `POST` (o cliente reinicia a ligação). Um `POST` com outra identidade responde 403.
+- O servidor fecha a ligação após **5 minutos sem mensagens** e, no máximo, ao fim de 30 minutos (não há keepalive documentado). Isso é só mais uma reconexão: novo `clientId`, novo `POST`, novo pull.
 - A ligação pode cair a qualquer momento (rede móvel, Tailscale a reconectar). Reconectar com backoff, **re-subscrever** (novo `clientId`) e fazer pull completo.
-- A autorização da subscrição é definida no momento do `POST /api/realtime`; se o token mudar, voltar a subscrever.
 
 ## Erros comuns
 

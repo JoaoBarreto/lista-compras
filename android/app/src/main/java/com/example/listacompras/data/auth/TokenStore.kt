@@ -10,7 +10,9 @@ import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.domain.model.UserSession
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -55,6 +57,14 @@ class TokenStore(
             }
         }
         .stateIn(scope, SharingStarted.Eagerly, AuthState.Loading)
+
+    /**
+     * The current token (null while loading or logged out). Unlike [state] it also emits when the
+     * token is refreshed for the same user, which the realtime subscription needs to re-authorize.
+     */
+    val tokenFlow: Flow<String?> = stored
+        .map { value -> if (value === UNLOADED) null else value?.token }
+        .distinctUntilChanged()
 
     override fun token(): String? = stored.value?.takeIf { it !== UNLOADED }?.token
 

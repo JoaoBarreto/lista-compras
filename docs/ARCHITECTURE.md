@@ -88,9 +88,14 @@ ui  ──►  domain  ◄──  data
 
 ### Realtime (SSE)
 
-- Reconectar automaticamente com backoff exponencial limitado.
-- Após cada reconexão: **nova subscrição** (o `clientId` muda) e **pull completo**, porque se podem ter perdido eventos.
-- A ligação só corre com a app em primeiro plano. Em segundo plano, o `SyncWorker` periódico/por constraint trata do resto.
+`RealtimeClient` (`data/sync`), exposto ao resto da app pela interface `RealtimeSync` (domínio):
+
+- **Ordem por ligação:** ligar → esperar `PB_CONNECT` (traz o `clientId`) → subscrever `items/*` → pull completo → aplicar eventos. Subscrever *antes* do pull garante que nada entre o snapshot e a subscrição se perde. Depois de subscrever com sucesso pede-se também `requestSync()`.
+- **Eventos** (`RealtimeEventApplier`): com as mesmas regras do `Reconciler` para um só registo. `create`/`update` fazem upsert como `SYNCED`, `delete` apaga; em qualquer caso ignora-se o item se tiver operações em `pending_ops` (lidas dentro da transação), o que cobre também o eco da própria alteração. Registos de outra lista, ações desconhecidas e JSON inválido são ignorados sem fechar a ligação (regista-se só a ação). Cada evento é aplicado sob o `SyncLock`, por isso um evento que chega durante um pull é aplicado depois do snapshot e nunca é sobrescrito por ele.
+- O *listener* OkHttp só coloca mensagens num buffer ilimitado (`callbackFlow`); nunca bloqueia a thread do OkHttp. O pull nunca é chamado com o lock tomado.
+- **Reconexão:** quando a ligação fecha ou falha (incluindo subscrição rejeitada ou pull com `Retry`), espera-se com backoff exponencial (1 s, dobrando até 30 s, com ±20 % de jitter) e volta-se a ligar com novo `clientId`. O backoff só volta ao início depois de subscrever **e** fazer o pull com sucesso (se voltasse ao início logo após subscrever, um pull que falha sempre reconectava de segundo a segundo, sem fim). Qualquer exceção na ligação (rede, resposta que não é `text/event-stream`, data inválida...) é só mais uma reconexão e nunca chega ao ciclo de vida da activity. `AuthLost` no pull termina a tentativa até haver nova sessão. O fecho por inatividade do servidor (5 min) é só mais uma reconexão.
+- **Token:** a subscrição fica autorizada com o token usado no `POST`. `TokenStore.tokenFlow` emite também nas renovações do mesmo utilizador (o `AuthState` não emite nesse caso); o cliente usa `collectLatest` sobre ele, por isso uma renovação reinicia a ligação (nova subscrição) e o logout cancela-a.
+- **Ciclo de vida:** `MainActivity` corre `RealtimeSync.run()` dentro de `repeatOnLifecycle(STARTED)`: a ligação só existe com a app visível. Em segundo plano trata do resto o `SyncWorker`; ao voltar, a nova ligação faz pull e apanha o que se perdeu.
 
 ## Autenticação
 

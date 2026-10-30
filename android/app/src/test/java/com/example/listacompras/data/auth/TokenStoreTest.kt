@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -73,6 +74,24 @@ class TokenStoreTest {
 
         assertEquals(AuthState.LoggedOut, store.state.first { it is AuthState.LoggedOut })
         assertNull(store.token())
+    }
+
+    @Test
+    fun tokenFlowEmitsOnRefreshOfTheSameUserAndOnLogout() = runBlocking {
+        val store = newStore(tmp.newFile("e.preferences_pb").also { it.delete() })
+        val session = UserSession("u", "Ana")
+        val seen = mutableListOf<String?>()
+        val collector = launch(Dispatchers.Unconfined) { store.tokenFlow.collect { seen += it } }
+
+        store.save("t1", session)
+        store.save("t2", session)
+        store.save("t2", session)
+        store.clear()
+        collector.cancelAndJoin()
+
+        // Each distinct token once (the repeated "t2" is not re-emitted), then null after logout.
+        assertEquals(listOf("t1", "t2"), seen.filterNotNull())
+        assertNull(seen.last())
     }
 
     @Test

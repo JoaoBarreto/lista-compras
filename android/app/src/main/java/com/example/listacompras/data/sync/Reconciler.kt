@@ -39,9 +39,9 @@ class Reconciler(
     private val tokenProvider: TokenProvider,
     private val clock: Clock,
     private val pageSize: Int = PAGE_SIZE,
-) {
+) : FullPull {
 
-    suspend fun pull(): SyncOutcome = lock.mutex.withLock {
+    override suspend fun pull(): SyncOutcome = lock.mutex.withLock {
         try {
             val listId = activeList.listId()?.takeIf { it.isNotEmpty() }
                 ?: run {
