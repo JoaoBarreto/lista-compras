@@ -65,7 +65,7 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 
 ## Realtime (SSE)
 
-Não é WebSocket. Fluxo (documentação oficial v0.41; **confirmado no servidor real** em 2026-10-30: ligar, subscrever com 204, pull, e eventos `create`/`update`/`delete` aplicados; versão exata do servidor por registar):
+Não é WebSocket. Fluxo (documentação oficial v0.41; **confirmado no servidor real (PocketBase v0.40.6)** em 2026-10-30: ligar, subscrever com 204, pull, e eventos `create`/`update`/`delete` aplicados):
 
 1. `GET /api/realtime` com `Accept: text/event-stream`. O primeiro evento é `PB_CONNECT`, com `data: {"clientId":"..."}` (o SDK JS lê o id também do campo SSE `id:`; o cliente aceita ambos).
 2. `POST /api/realtime` (com `Authorization`) a registar subscrições; sucesso = **204**, `clientId` desconhecido ou expirado = **404**:
