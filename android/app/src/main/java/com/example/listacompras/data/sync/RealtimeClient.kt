@@ -98,11 +98,13 @@ class RealtimeClient(
     }
 
     private suspend fun connectOnce(onConnected: () -> Unit) {
+        log("Realtime connecting")
         messages().collect { message ->
             if (message.type == CONNECT_EVENT) {
                 handshake(clientIdOf(message), onConnected)
             } else {
                 // Events are only for our one subscription; anything unparseable is ignored there.
+                log("Realtime event received: ${message.type}")
                 applier.apply(message.data)
             }
         }
@@ -115,11 +117,13 @@ class RealtimeClient(
             throw ConnectionLost("subscribe HTTP ${e.code()}", e)
         }
         if (!response.isSuccessful) throw ConnectionLost("subscribe HTTP ${response.code()}")
+        log("Realtime subscribed")
         when (pull.pull()) {
             SyncOutcome.Done -> Unit
             SyncOutcome.Retry -> throw ConnectionLost("pull failed")
             SyncOutcome.AuthLost -> throw SessionEnded()
         }
+        log("Realtime pull done")
         // Only a connection that subscribed *and* pulled counts as healthy. Resetting earlier would
         // make a persistently failing pull reconnect every second, forever.
         onConnected()
