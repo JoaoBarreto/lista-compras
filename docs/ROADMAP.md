@@ -57,9 +57,9 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 - [ ] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
   - ✔ Duas instâncias (dois telemóveis/emuladores): alteração num aparece no outro em segundos
   - Estado: implementada e verificada num telemóvel contra o servidor real (create/update/delete, reconexão ao reabrir). Falta o teste com duas instâncias, possível só depois da 5.2.
-- [ ] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
+- [x] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
   - ✔ Reflete corretamente modo avião ligado/desligado
-  - Estado: implementada e testada na JVM; falta confirmar o modo avião num telemóvel (`adb logcat -s SyncStatus Realtime`).
+  - Verificado no telemóvel em 2026-10-30: modo avião ligado → Offline em ~2 ms; desligado → A sincronizar até ao `pull done` e só então Sincronizado.
 
 ## Fase 5 · Interface
 - [ ] **5.1** `ShoppingViewModel` + `UiState` (por comprar / comprados / estado de sync)
@@ -68,6 +68,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Funciona com avião ligado; teclado não tapa o campo de adição
 - [ ] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
   - ✔ Visível e compreensível nos quatro estados
+  - Substituir os restos de diagnóstico da 4.3/4.4: o coletor `SyncStatus` temporário no `MainActivity` e o log dos valores brutos no `RealtimeModule` (`BuildConfig.DEBUG`) pelo indicador visível; chamar `SyncStatusProvider.acknowledgeErrors()` ao tocar no erro.
 - [ ] **5.4** Estados vazios, modo escuro, acessibilidade básica (content descriptions, alvos de toque ≥ 48dp)
 
 ## Fase 6 · Polimento e entrega
