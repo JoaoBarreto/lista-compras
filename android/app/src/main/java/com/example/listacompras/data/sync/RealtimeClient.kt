@@ -82,7 +82,7 @@ class RealtimeClient(
         launch {
             network.collect { online ->
                 log("Realtime network=$online")
-                if (!online) reachability.markUnknown()
+                reachability.onNetworkChanged(online)
             }
         }
         // Connect only with a token *and* a network. Every offline -> online change (and every new
