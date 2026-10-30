@@ -22,6 +22,9 @@ interface PendingOpDao {
     @Query("DELETE FROM pending_ops WHERE opId = :opId")
     suspend fun delete(opId: Long)
 
+    @Query("UPDATE pending_ops SET payloadJson = :payloadJson WHERE opId = :opId")
+    suspend fun updatePayload(opId: Long, payloadJson: String)
+
     @Query("DELETE FROM pending_ops WHERE itemId = :itemId")
     suspend fun deleteForItem(itemId: String)
 

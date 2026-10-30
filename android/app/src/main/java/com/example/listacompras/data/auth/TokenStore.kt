@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.listacompras.data.remote.TokenProvider
+import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.domain.model.UserSession
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +28,7 @@ class TokenStore(
     private val dataStore: DataStore<Preferences>,
     private val cipher: TokenCipher,
     scope: CoroutineScope,
-) : TokenProvider {
+) : TokenProvider, CurrentUserProvider {
 
     private data class Stored(val token: String, val session: UserSession)
 
@@ -56,6 +57,8 @@ class TokenStore(
         .stateIn(scope, SharingStarted.Eagerly, AuthState.Loading)
 
     override fun token(): String? = stored.value?.takeIf { it !== UNLOADED }?.token
+
+    override fun currentUserId(): String? = currentSession()?.userId
 
     /** Current user, or null when logged out or not loaded yet. */
     fun currentSession(): UserSession? = stored.value?.takeIf { it !== UNLOADED }?.session

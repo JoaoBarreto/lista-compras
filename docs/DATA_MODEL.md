@@ -37,7 +37,7 @@ MVP: existe uma única lista, criada manualmente no dashboard (ou por migração
 | `name` | text (1–100) | sim | |
 | `quantity` | text (≤ 30) | não | Livre: "2", "500 g", "1 cx" |
 | `checked` | bool | sim (default `false`) | |
-| `category` | select (single) | não | `fruits_veg`, `meat_fish`, `dairy`, `pantry`, `household`, `other` |
+| `category` | select (single) | não | `oils_sauces`, `drinks`, `meat`, `deli`, `frozen`, `fruit`, `personal_care`, `dairy`, `cleaning`, `sweet_pantry`, `savory_pantry`, `bakery`, `fish_seafood`, `pet`, `baby`, `snacks`, `household`, `vegetables`, `other`. Editado à mão no dashboard; os nomes em português ficam no `strings.xml` |
 | `added_by` | relation → `users` (single) | sim | |
 | `checked_by` | relation → `users` (single) | não | Preenchido ao marcar |
 | `created` / `updated` | autodate | sim | |
@@ -73,7 +73,12 @@ data class ShoppingItem(
     val syncState: SyncState,
 )
 
-enum class Category { FRUITS_VEG, MEAT_FISH, DAIRY, PANTRY, HOUSEHOLD, OTHER }
+// `slug` is the server value (e.g. DAIRY("dairy")); Category.fromSlug() returns null for unknown/blank.
+enum class Category(val slug: String) {
+    OILS_SAUCES, DRINKS, MEAT, DELI, FROZEN, FRUIT, PERSONAL_CARE, DAIRY, CLEANING,
+    SWEET_PANTRY, SAVORY_PANTRY, BAKERY, FISH_SEAFOOD, PET, BABY, SNACKS, HOUSEHOLD,
+    VEGETABLES, OTHER,
+}
 enum class SyncState { SYNCED, PENDING }
 ```
 
@@ -85,7 +90,23 @@ Base de dados `lista_compras.db` (versão 1, schema exportado em `android/app/sc
 - `pending_ops` (`PendingOpEntity`): `opId` (auto), `itemId`, `type` (`CREATE|UPDATE|DELETE`), `payloadJson`, `createdAt`, `attempts`. Índice em `itemId`. **Sem chave estrangeira para `items`**: um `DELETE` pendente tem de sobreviver à linha apagada.
 - `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`.
 
-DAOs: `ItemDao`, `PendingOpDao`, `SyncMetaDao`. Os testes usam base de dados em memória (`androidTest`).
+DAOs: `ItemDao`, `PendingOpDao` (com `updatePayload`, usado pela coalescência), `SyncMetaDao` (com `observe(key)`, usado para a chave `activeListId`). Os testes usam base de dados em memória (`androidTest`).
+
+### Repositório e outbox
+
+`ItemRepositoryImpl` (`data/repository`) escreve em `items` e `pending_ops` na mesma transação (`TransactionRunner`, que no Room é `withTransaction`). `payloadJson` é exatamente o corpo HTTP que o `SyncWorker` (4.1) envia, serializado com o `Json` de `PocketBaseApiFactory`. Esta camada não funde operações (isso é do `OutboxCoalescer`, ver ARCHITECTURE) nem envia nada.
+
+| Operação | Efeito em `items` | `pending_op` |
+|---|---|---|
+| `add` | insere com `syncState = PENDING` | `CREATE`, `ItemDto` completo (sem campos nulos) |
+| `setChecked(true)` | `checked`, `checkedBy = userId`, `PENDING` | `UPDATE`, `{"checked":true,"checked_by":"<uid>"}` |
+| `setChecked(false)` | `checked = false`, `checkedBy = null`, `PENDING` | `UPDATE`, `{"checked":false,"checked_by":""}` (string vazia: um `null` seria omitido e o servidor manteria o valor antigo) |
+| `delete` | apaga a linha | `DELETE`, `{}` (o id vai em `itemId`) |
+| `clearChecked` | apaga os marcados da lista ativa | um `DELETE` por item |
+
+Operações sobre um id inexistente não fazem nada. `add` devolve `false` (sem alterar nada) se ainda não houver lista ativa ou utilizador.
+
+**Lista ativa:** guardada em `sync_meta` na chave `activeListId` (`ActiveListProvider`). `ListRepository.ensureActiveList()` vai buscar a primeira lista ao servidor (`GET lists?sort=created&perPage=1`) só se a chave ainda não existir. `SessionViewModel` chama-o quando há sessão (logo após o login, que já exige rede, e em arranques seguintes se a tentativa falhou). Depois disso o id é local e `add` funciona sempre offline. Até haver lista, `observeItems()` emite lista vazia e `add` devolve `false`.
 
 ### DTO (rede)
 

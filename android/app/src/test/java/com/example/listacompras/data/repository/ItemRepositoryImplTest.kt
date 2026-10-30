@@ -1,0 +1,205 @@
+package com.example.listacompras.data.repository
+
+import com.example.listacompras.data.local.dao.ItemDao
+import com.example.listacompras.data.local.dao.PendingOpDao
+import com.example.listacompras.data.local.entity.ItemEntity
+import com.example.listacompras.data.local.entity.OpType
+import com.example.listacompras.data.local.entity.PendingOpEntity
+import com.example.listacompras.data.remote.PocketBaseApiFactory
+import com.example.listacompras.domain.model.Category
+import com.example.listacompras.domain.model.SyncState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+
+private class FakeItemDao : ItemDao {
+    val items = MutableStateFlow<Map<String, ItemEntity>>(emptyMap())
+    override fun observeItems(listId: String): Flow<List<ItemEntity>> =
+        items.map { m -> m.values.filter { it.listId == listId }.sortedBy { it.createdAt } }
+    override suspend fun getItems(listId: String) = items.value.values.filter { it.listId == listId }
+    override suspend fun getById(id: String) = items.value[id]
+    override suspend fun upsert(item: ItemEntity) { items.value += item.id to item }
+    override suspend fun upsertAll(items: List<ItemEntity>) = items.forEach { upsert(it) }
+    override suspend fun deleteById(id: String) { items.value -= id }
+    override suspend fun deleteByIds(ids: List<String>) { items.value -= ids.toSet() }
+    override suspend fun getCheckedIds(listId: String) =
+        items.value.values.filter { it.listId == listId && it.checked }.map { it.id }
+    override suspend fun deleteChecked(listId: String) { deleteByIds(getCheckedIds(listId)) }
+}
+
+private class FakeActiveList(initial: String?) : ActiveListProvider {
+    val id = MutableStateFlow(initial)
+    override fun observeListId() = id
+    override suspend fun listId() = id.value
+    override suspend fun setListId(id: String) { this.id.value = id }
+}
+
+class ItemRepositoryImplTest {
+
+    private val itemDao = FakeItemDao()
+    private val opDao = FakePendingOpDao()
+    private val activeList = FakeActiveList("list1")
+    private var userId: String? = "user1"
+    private var ids = generateSequence(1) { it + 1 }.map { "id%012d".format(it) }.iterator()
+    private val clock = Clock.fixed(Instant.ofEpochMilli(1_000), ZoneOffset.UTC)
+
+    private val repo = ItemRepositoryImpl(
+        itemDao = itemDao,
+        pendingOpDao = opDao,
+        transactions = object : TransactionRunner {
+            override suspend fun <T> run(block: suspend () -> T): T = block()
+        },
+        activeList = activeList,
+        currentUser = object : CurrentUserProvider { override fun currentUserId() = userId },
+        json = PocketBaseApiFactory.json,
+        clock = clock,
+        newId = { ids.next() },
+    )
+
+    private suspend fun addMilk() = repo.add("Leite", "2", Category.DAIRY).also { assertTrue(it) }
+
+    @Test
+    fun `add stores a pending item and a CREATE op with the full body`() = runTest {
+        addMilk()
+
+        val item = itemDao.items.value.values.single()
+        assertEquals("id000000000001", item.id)
+        assertEquals("Leite", item.name)
+        assertEquals("dairy", item.category)
+        assertEquals("user1", item.addedBy)
+        assertEquals(SyncState.PENDING, item.syncState)
+        val op = opDao.ops.single()
+        assertEquals(OpType.CREATE, op.type)
+        assertEquals(item.id, op.itemId)
+        assertEquals(
+            """{"id":"id000000000001","list":"list1","name":"Leite","quantity":"2","checked":false,""" +
+                """"category":"dairy","added_by":"user1"}""",
+            op.payloadJson,
+        )
+    }
+
+    @Test
+    fun `add omits blank quantity and missing category from the body`() = runTest {
+        repo.add("Pão", "  ", null)
+
+        val op = opDao.ops.single()
+        assertEquals(
+            """{"id":"id000000000001","list":"list1","name":"Pão","checked":false,"added_by":"user1"}""",
+            op.payloadJson,
+        )
+        assertNull(itemDao.items.value.values.single().quantity)
+    }
+
+    @Test
+    fun `add without active list or user changes nothing`() = runTest {
+        activeList.id.value = null
+        assertFalse(repo.add("Leite"))
+        activeList.id.value = "list1"
+        userId = null
+        assertFalse(repo.add("Leite"))
+
+        assertTrue(itemDao.items.value.isEmpty())
+        assertTrue(opDao.ops.isEmpty())
+    }
+
+    @Test
+    fun `setChecked true updates the item and queues an UPDATE with checked_by`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+
+        repo.setChecked(id, true)
+
+        val item = itemDao.items.value.getValue(id)
+        assertTrue(item.checked)
+        assertEquals("user1", item.checkedBy)
+        val op = opDao.ops.last()
+        assertEquals(OpType.UPDATE, op.type)
+        assertEquals("""{"checked":true,"checked_by":"user1"}""", op.payloadJson)
+    }
+
+    @Test
+    fun `setChecked false sends an explicit empty checked_by to clear the relation`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+        repo.setChecked(id, true)
+
+        repo.setChecked(id, false)
+
+        val item = itemDao.items.value.getValue(id)
+        assertFalse(item.checked)
+        assertNull(item.checkedBy)
+        assertEquals("""{"checked":false,"checked_by":""}""", opDao.ops.last().payloadJson)
+    }
+
+    @Test
+    fun `setChecked on an unknown id does nothing`() = runTest {
+        repo.setChecked("missing", true)
+
+        assertTrue(opDao.ops.isEmpty())
+    }
+
+    @Test
+    fun `delete removes the item and queues a DELETE op`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+
+        repo.delete(id)
+
+        assertTrue(itemDao.items.value.isEmpty())
+        val op = opDao.ops.last()
+        assertEquals(OpType.DELETE, op.type)
+        assertEquals(id, op.itemId)
+        assertEquals("{}", op.payloadJson)
+    }
+
+    @Test
+    fun `clearChecked deletes only checked items and queues one DELETE each`() = runTest {
+        repo.add("A"); repo.add("B"); repo.add("C")
+        val (a, b, c) = itemDao.items.value.keys.toList()
+        repo.setChecked(a, true)
+        repo.setChecked(c, true)
+        opDao.ops.clear()
+
+        repo.clearChecked()
+
+        assertEquals(setOf(b), itemDao.items.value.keys)
+        assertEquals(listOf(OpType.DELETE, OpType.DELETE), opDao.ops.map { it.type })
+        assertEquals(setOf(a, c), opDao.ops.map { it.itemId }.toSet())
+    }
+
+    @Test
+    fun `observeItems maps entities and turns an unknown category into null`() = runTest {
+        itemDao.upsert(entity("x1", category = "dairy"))
+        itemDao.upsert(entity("x2", category = "from_the_future", createdAt = 2))
+        itemDao.upsert(entity("x3", category = "", createdAt = 3))
+
+        val items = repo.observeItems().first()
+
+        assertEquals(listOf(Category.DAIRY, null, null), items.map { it.category })
+        assertEquals(Instant.ofEpochMilli(1_000), items.first().updatedAt)
+    }
+
+    @Test
+    fun `observeItems is empty while there is no active list`() = runTest {
+        activeList.id.value = null
+        itemDao.upsert(entity("x1", category = null))
+
+        assertTrue(repo.observeItems().first().isEmpty())
+    }
+
+    private fun entity(id: String, category: String?, createdAt: Long = 1) = ItemEntity(
+        id = id, listId = "list1", name = id, quantity = null, checked = false, category = category,
+        addedBy = "user1", checkedBy = null, createdAt = createdAt, updatedAt = 1_000,
+        syncState = SyncState.SYNCED,
+    )
+}

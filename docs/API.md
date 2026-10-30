@@ -23,6 +23,11 @@ Credenciais erradas devolvem **400** (`"Failed to authenticate."`), não 401.
 Com token **expirado** o servidor deve responder 401 (a documentação do PocketBase só descreve token válido; não confirmado), por isso a app renova antes de expirar e, se falhar, volta ao login.
 `POST /api/collections/users/auth-refresh` (autenticado) → novo `token` + `record`.
 
+## Listas
+
+### Obter a lista ativa (MVP)
+`GET /api/collections/lists/records?sort=created&perPage=1` → `items[0].id` (a lista mais antiga). Chamado uma vez após o login; o id fica em `sync_meta`.
+
 ## Itens
 
 ### Listar

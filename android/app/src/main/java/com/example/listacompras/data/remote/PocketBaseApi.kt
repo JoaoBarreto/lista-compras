@@ -2,6 +2,7 @@ package com.example.listacompras.data.remote
 
 import com.example.listacompras.data.remote.dto.AuthResponse
 import com.example.listacompras.data.remote.dto.ItemDto
+import com.example.listacompras.data.remote.dto.ListDto
 import com.example.listacompras.data.remote.dto.ListResponse
 import com.example.listacompras.data.remote.dto.LoginRequest
 import kotlinx.serialization.json.JsonObject
@@ -21,6 +22,13 @@ interface PocketBaseApi {
 
     @POST("api/collections/users/auth-refresh")
     suspend fun refresh(): AuthResponse
+
+    /** MVP: the app uses the oldest list, so callers ask for a single record sorted by creation. */
+    @GET("api/collections/lists/records")
+    suspend fun listLists(
+        @Query("sort") sort: String = "created",
+        @Query("perPage") perPage: Int = 1,
+    ): ListResponse<ListDto>
 
     @GET("api/collections/items/records")
     suspend fun listItems(

@@ -1,6 +1,7 @@
 package com.example.listacompras.data.local
 
 import com.example.listacompras.data.local.entity.SyncMetaEntity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -22,5 +23,13 @@ class SyncMetaDaoTest : DaoTestBase() {
 
         dao.put(SyncMetaEntity("lastFullSyncAt", "2"))
         assertEquals("2", dao.get("lastFullSyncAt"))
+    }
+
+    @Test
+    fun observeEmitsNullThenTheStoredValue() = runTest {
+        assertNull(dao.observe("activeListId").first())
+
+        dao.put(SyncMetaEntity("activeListId", "list1"))
+        assertEquals("list1", dao.observe("activeListId").first())
     }
 }
