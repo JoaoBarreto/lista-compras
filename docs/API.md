@@ -65,7 +65,7 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 
 ## Realtime (SSE)
 
-Não é WebSocket. Fluxo (verificado na documentação oficial, v0.41; **não confirmado contra a versão exata do servidor**):
+Não é WebSocket. Fluxo (documentação oficial v0.41; **confirmado no servidor real** em 2026-10-30: ligar, subscrever com 204, pull, e eventos `create`/`update`/`delete` aplicados; versão exata do servidor por registar):
 
 1. `GET /api/realtime` com `Accept: text/event-stream`. O primeiro evento é `PB_CONNECT`, com `data: {"clientId":"..."}` (o SDK JS lê o id também do campo SSE `id:`; o cliente aceita ambos).
 2. `POST /api/realtime` (com `Authorization`) a registar subscrições; sucesso = **204**, `clientId` desconhecido ou expirado = **404**:
@@ -77,7 +77,7 @@ Não é WebSocket. Fluxo (verificado na documentação oficial, v0.41; **não co
    ```json
    { "action": "create" | "update" | "delete", "record": { ... } }
    ```
-   O formato exato do `data` não está descrito na documentação; vem do comportamento do SDK. **Confirmar com um evento real** (ex.: editar um item no dashboard e ver o log `Realtime`). O cliente aceita qualquer nome de evento que não seja `PB_CONNECT` e ignora `data` que não consiga interpretar.
+   O formato do `data` não está descrito na documentação, mas foi **confirmado com eventos reais** (o `Applied realtime …` só aparece quando o `data` é lido). O cliente aceita qualquer nome de evento que não seja `PB_CONNECT` e ignora `data` que não consiga interpretar. Para diagnosticar: `adb logcat -s Realtime` mostra `connecting`, `subscribed`, `pull done`, `event received` e `Applied realtime <ação>` (só ações, nunca dados).
 
 Regras de acesso: a `listRule` da collection é avaliada para cada evento, com a autenticação guardada no `POST`.
 

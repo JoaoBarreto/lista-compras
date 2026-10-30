@@ -56,6 +56,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Teste: remoto substitui local, exceto itens com operações pendentes; apagamentos remotos são aplicados
 - [ ] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
   - ✔ Duas instâncias (dois telemóveis/emuladores): alteração num aparece no outro em segundos
+  - Estado: implementada e verificada num telemóvel contra o servidor real (create/update/delete, reconexão ao reabrir). Falta o teste com duas instâncias, possível só depois da 5.2.
 - [ ] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
   - ✔ Reflete corretamente modo avião ligado/desligado
 
