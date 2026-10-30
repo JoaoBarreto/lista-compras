@@ -80,6 +80,8 @@ ui  ──►  domain  ◄──  data
   - `TokenStore` (`data/auth`) guarda o token cifrado (AES-256/GCM, chave não exportável no Keystore, via `TokenCipher`) e o `userId`/nome (necessários para `added_by`/`checked_by`). Mantém o valor em memória para o `AuthInterceptor` o ler de forma síncrona.
   - Token ilegível (chave perdida, reinstalação) conta como sessão terminada, sem crash. O ficheiro `datastore/auth.preferences_pb` está excluído dos backups, porque a chave do Keystore não é copiada.
   - A navegação é conduzida por `AuthRepository.authState` (`Loading`/`LoggedOut`/`LoggedIn`): login, logout e, futuramente, falha de refresh limitam-se a mudar este estado.
+  - **401 → refresh:** `TokenAuthenticator` (OkHttp `Authenticator`) renova o token uma única vez para todos os pedidos concorrentes (chamada síncrona a `auth-refresh`, fora do dispatcher) e repete o pedido. Se o servidor rejeitar o refresh (400/401/403/404), a sessão é limpa e a navegação volta ao login (os dados locais ficam). Erros de rede/5xx mantêm a sessão: estar offline nunca termina a sessão.
+  - **Refresh preventivo:** ao arrancar, `AuthRepository.refreshSessionIfNeeded()` renova o token se faltarem menos de 7 dias (lê `exp` do JWT). Um token já expirado pode ser recusado pelo `auth-refresh` (não confirmado na documentação), por isso renovar antes de expirar é o que mantém os dois telemóveis autenticados.
   - Credenciais erradas: o PocketBase responde **400** (não 401) em `auth-with-password`.
 - Interceptor OkHttp adiciona o cabeçalho `Authorization`.
 - Token renovado com `auth-refresh` quando perto de expirar ou ao receber 401.

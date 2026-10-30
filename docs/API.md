@@ -19,6 +19,8 @@ Resposta: `{ "token": "...", "record": { "id": "...", "name": "...", ... } }`
 Credenciais erradas devolvem **400** (`"Failed to authenticate."`), não 401.
 
 ### Renovar token
+
+Com token **expirado** o servidor deve responder 401 (a documentação do PocketBase só descreve token válido; não confirmado), por isso a app renova antes de expirar e, se falhar, volta ao login.
 `POST /api/collections/users/auth-refresh` (autenticado) → novo `token` + `record`.
 
 ## Itens

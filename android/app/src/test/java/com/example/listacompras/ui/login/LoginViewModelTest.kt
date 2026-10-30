@@ -34,6 +34,8 @@ class LoginViewModelTest {
             return result
         }
 
+        override suspend fun refreshSessionIfNeeded() = Unit
+
         override suspend fun logout() = Unit
     }
 

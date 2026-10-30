@@ -14,10 +14,15 @@ object PocketBaseApiFactory {
     }
 
     fun create(baseUrl: String, client: OkHttpClient, json: Json = this.json): PocketBaseApi =
+        retrofit(baseUrl, client, json).create(PocketBaseApi::class.java)
+
+    fun createRefreshApi(baseUrl: String, client: OkHttpClient, json: Json = this.json): TokenRefreshApi =
+        retrofit(baseUrl, client, json).create(TokenRefreshApi::class.java)
+
+    private fun retrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit =
         Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-            .create(PocketBaseApi::class.java)
 }

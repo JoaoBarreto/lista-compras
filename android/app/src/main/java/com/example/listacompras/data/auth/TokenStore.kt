@@ -10,10 +10,13 @@ import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.domain.model.UserSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.io.IOException
 
 /**
@@ -28,10 +31,19 @@ class TokenStore(
 
     private data class Stored(val token: String, val session: UserSession)
 
-    private val stored: StateFlow<Stored?> = dataStore.data
-        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-        .map(::read)
-        .stateIn(scope, SharingStarted.Eagerly, UNLOADED)
+    // Only this class writes the DataStore, so after the initial load the cache is updated directly
+    // by save()/clear(); concurrent OkHttp threads then see changes immediately.
+    private val stored = MutableStateFlow<Stored?>(UNLOADED)
+
+    init {
+        scope.launch {
+            val initial = dataStore.data
+                .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+                .map(::read)
+                .first()
+            stored.compareAndSet(UNLOADED, initial)
+        }
+    }
 
     val state: StateFlow<AuthState> = stored
         .map { value ->
@@ -43,7 +55,10 @@ class TokenStore(
         }
         .stateIn(scope, SharingStarted.Eagerly, AuthState.Loading)
 
-    override fun token(): String? = stored.value?.token
+    override fun token(): String? = stored.value?.takeIf { it !== UNLOADED }?.token
+
+    /** Current user, or null when logged out or not loaded yet. */
+    fun currentSession(): UserSession? = stored.value?.takeIf { it !== UNLOADED }?.session
 
     suspend fun save(token: String, session: UserSession) {
         val encrypted = cipher.encrypt(token)
@@ -52,10 +67,12 @@ class TokenStore(
             it[USER_ID] = session.userId
             session.displayName?.let { name -> it[USER_NAME] = name } ?: it.remove(USER_NAME)
         }
+        stored.value = Stored(token, session)
     }
 
     suspend fun clear() {
         dataStore.edit { it.clear() }
+        stored.value = null
     }
 
     /** An undecryptable token (e.g. lost Keystore key) counts as logged out. */

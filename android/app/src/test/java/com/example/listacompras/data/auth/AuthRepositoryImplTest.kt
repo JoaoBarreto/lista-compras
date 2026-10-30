@@ -9,7 +9,9 @@ import com.example.listacompras.domain.repository.LoginError
 import com.example.listacompras.domain.repository.LoginResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -18,10 +20,13 @@ import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.time.Duration
+import java.time.Instant
 
 class AuthRepositoryImplTest {
 
@@ -103,5 +108,104 @@ class AuthRepositoryImplTest {
         repository.logout()
 
         assertEquals(AuthState.LoggedOut, tokenStore.state.first { it is AuthState.LoggedOut })
+    }
+
+    private fun jwt(expiresAt: Instant): String {
+        val enc = java.util.Base64.getUrlEncoder().withoutPadding()
+        val payload = enc.encodeToString("""{"exp":${expiresAt.epochSecond}}""".toByteArray())
+        return "${enc.encodeToString("{}".toByteArray())}.$payload.sig"
+    }
+
+    private suspend fun loginWith(token: String) {
+        tokenStore.save(token, UserSession("user1", "Ana"))
+        tokenStore.state.first { it is AuthState.LoggedIn }
+    }
+
+    @Test
+    fun tokenNearExpiryIsRefreshedAtStart() = runBlocking {
+        val old = jwt(Instant.now().plus(Duration.ofDays(2)))
+        loginWith(old)
+        server.enqueue(
+            MockResponse.Builder().addHeader("Content-Type", "application/json")
+                .body("""{"token":"newtok","record":{"id":"user1"}}""").build(),
+        )
+
+        repository.refreshSessionIfNeeded()
+
+        assertEquals(old, server.takeRequest().headers["Authorization"])
+        assertEquals("newtok", tokenStore.token())
+        assertEquals(AuthState.LoggedIn(UserSession("user1", "Ana")), tokenStore.state.value)
+    }
+
+    @Test
+    fun freshTokenIsNotRefreshed() = runBlocking {
+        loginWith(jwt(Instant.now().plus(Duration.ofDays(13))))
+
+        repository.refreshSessionIfNeeded()
+
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun refreshRejectedByServerLogsOut() = runBlocking {
+        loginWith(jwt(Instant.now().minus(Duration.ofDays(1))))
+        server.enqueue(MockResponse.Builder().code(401).build())
+
+        repository.refreshSessionIfNeeded()
+
+        assertEquals(AuthState.LoggedOut, tokenStore.state.first { it is AuthState.LoggedOut })
+    }
+
+    @Test
+    fun refreshOfflineKeepsSession() = runBlocking {
+        val old = jwt(Instant.now().plus(Duration.ofDays(1)))
+        loginWith(old)
+        server.close()
+
+        repository.refreshSessionIfNeeded()
+
+        assertEquals(old, tokenStore.token())
+    }
+
+    /** Persists [token] with a store that is then closed, and returns a repository on a freshly opened store. */
+    private suspend fun coldStartRepository(token: String): AuthRepositoryImpl {
+        val file = tmp.newFile("cold.preferences_pb").also { it.delete() }
+        val firstScope = CoroutineScope(Dispatchers.Default + Job())
+        TokenStore(PreferenceDataStoreFactory.create(scope = firstScope) { file }, FakeTokenCipher(), firstScope)
+            .save(token, UserSession("user1", "Ana"))
+        firstScope.coroutineContext[Job]!!.cancelAndJoin()
+
+        val store = TokenStore(PreferenceDataStoreFactory.create(scope = scope) { file }, FakeTokenCipher(), scope)
+        coldStore = store
+        val client = OkHttpClient.Builder().addInterceptor(AuthInterceptor(store)).build()
+        val api = PocketBaseApiFactory.create(server.url("/").toString(), client)
+        return AuthRepositoryImpl(api, store, Dispatchers.IO)
+    }
+
+    private lateinit var coldStore: TokenStore
+
+    @Test
+    fun coldStartWithFreshTokenDoesNotRefreshOrLogOut() = runBlocking {
+        val repo = coldStartRepository(jwt(Instant.now().plus(Duration.ofDays(13))))
+
+        repo.refreshSessionIfNeeded()
+
+        assertEquals(0, server.requestCount)
+        assertTrue(coldStore.state.value is AuthState.LoggedIn)
+    }
+
+    @Test
+    fun coldStartWithNearExpiryTokenRefreshesWithStoredToken() = runBlocking {
+        val old = jwt(Instant.now().plus(Duration.ofDays(2)))
+        val repo = coldStartRepository(old)
+        server.enqueue(
+            MockResponse.Builder().addHeader("Content-Type", "application/json")
+                .body("""{"token":"newtok","record":{"id":"user1"}}""").build(),
+        )
+
+        repo.refreshSessionIfNeeded()
+
+        assertEquals(old, server.takeRequest().headers["Authorization"])
+        assertEquals("newtok", coldStore.token())
     }
 }

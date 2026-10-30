@@ -36,7 +36,7 @@ Docs: [API](API.md)
   - ✔ Testes com MockWebServer para login, listar, criar, atualizar, apagar
 - [x] **2.2** `TokenStore` + `AuthRepository` + ecrã de login
   - ✔ Login real contra o servidor; token persiste após fechar a app; erros mostram mensagem clara
-- [ ] **2.3** Renovação de token e tratamento de 401
+- [x] **2.3** Renovação de token e tratamento de 401
   - ✔ Teste unitário: 401 → refresh → repete pedido; refresh falhado → volta ao login
 
 ## Fase 3 · Dados locais e repositório (offline-first)

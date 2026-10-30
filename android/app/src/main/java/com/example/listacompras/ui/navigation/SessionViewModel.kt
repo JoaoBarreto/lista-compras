@@ -20,6 +20,10 @@ class SessionViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = authRepository.authState
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AuthState.Loading)
 
+    init {
+        viewModelScope.launch { authRepository.refreshSessionIfNeeded() }
+    }
+
     fun logout() {
         viewModelScope.launch { authRepository.logout() }
     }

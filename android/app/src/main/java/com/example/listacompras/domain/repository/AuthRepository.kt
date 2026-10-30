@@ -16,6 +16,12 @@ interface AuthRepository {
 
     suspend fun login(email: String, password: String): LoginResult
 
+    /**
+     * Renews the token when it is close to expiring. A server rejection logs out; network
+     * failures are ignored so being offline never ends the session.
+     */
+    suspend fun refreshSessionIfNeeded()
+
     /** Clears the stored credentials only; local data is kept. */
     suspend fun logout()
 }
