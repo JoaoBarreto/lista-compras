@@ -79,9 +79,13 @@ enum class SyncState { SYNCED, PENDING }
 
 ### Room
 
-- `ItemEntity` (espelha `items` + `syncState`)
-- `PendingOpEntity` (ver [ARCHITECTURE](ARCHITECTURE.md#sincronização-offline))
-- `SyncMetaEntity`
+Base de dados `lista_compras.db` (versão 1, schema exportado em `android/app/schemas/`; sem `fallbackToDestructiveMigration`: alterar o esquema exige migração). Excluída dos backups do Android, porque o servidor é a fonte de verdade e um outbox restaurado repetiria operações antigas.
+
+- `items` (`ItemEntity`): `id` (PK), `listId`, `name`, `quantity?`, `checked`, `category?` (string crua do servidor; o mapeamento para `Category` é feito no repositório), `addedBy`, `checkedBy?`, `createdAt`, `updatedAt` (epoch millis), `syncState`. Índice `(listId, checked)`.
+- `pending_ops` (`PendingOpEntity`): `opId` (auto), `itemId`, `type` (`CREATE|UPDATE|DELETE`), `payloadJson`, `createdAt`, `attempts`. Índice em `itemId`. **Sem chave estrangeira para `items`**: um `DELETE` pendente tem de sobreviver à linha apagada.
+- `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`.
+
+DAOs: `ItemDao`, `PendingOpDao`, `SyncMetaDao`. Os testes usam base de dados em memória (`androidTest`).
 
 ### DTO (rede)
 

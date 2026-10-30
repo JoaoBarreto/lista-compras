@@ -20,6 +20,7 @@ Usar `gradle/libs.versions.toml` (version catalog). **Confirmar a última versã
 | Local | Room (`room-runtime`, `room-ktx`, `room-compiler` via KSP) |
 | Rede | Retrofit, `converter-kotlinx-serialization`, OkHttp, `okhttp-sse`, `logging-interceptor` (só debug) |
 | Serialização | `kotlinx-serialization-json` |
+| Coroutines | `kotlinx-coroutines-android` (fixada na mesma versão dos testes; evita que a app resolva um `core` antigo incompatível com `kotlinx-coroutines-test`) |
 | Background | `work-runtime-ktx` |
 | Preferências | `datastore-preferences` |
 | Datas | `java.time` (core library desugaring se min SDK < 26 vier a ser necessário) |

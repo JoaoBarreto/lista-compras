@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The auth token is encrypted with a Keystore key that is never backed up, so exclude it. -->
+<!-- The auth token is encrypted with a Keystore key that is never backed up, so exclude it. The database (incl. the outbox) is also excluded: the server is the source of truth. -->
 <full-backup-content>
     <exclude domain="file" path="datastore/auth.preferences_pb" />
+    <exclude domain="database" path="." />
 </full-backup-content>
