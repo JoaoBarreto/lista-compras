@@ -16,6 +16,8 @@ import com.example.listacompras.data.repository.SyncMetaActiveListProvider
 import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.data.sync.OutboxCoalescer
 import com.example.listacompras.data.sync.OutboxProcessor
+import com.example.listacompras.data.sync.Reconciler
+import com.example.listacompras.data.sync.SyncLock
 import com.example.listacompras.domain.repository.SyncScheduler
 import com.example.listacompras.data.sync.WorkManagerSyncScheduler
 import android.content.Context
@@ -60,6 +62,27 @@ object RepositoryModule {
 
     @Provides
     @Singleton
+    fun provideSyncLock(): SyncLock = SyncLock()
+
+    @Provides
+    @Singleton
+    fun provideReconciler(
+        api: PocketBaseApi,
+        itemDao: ItemDao,
+        pendingOpDao: PendingOpDao,
+        syncMetaDao: SyncMetaDao,
+        activeList: ActiveListProvider,
+        listRepository: ListRepository,
+        transactions: TransactionRunner,
+        lock: SyncLock,
+        tokenStore: TokenStore,
+    ): Reconciler = Reconciler(
+        api, itemDao, pendingOpDao, syncMetaDao, activeList, listRepository, transactions, lock,
+        tokenStore, Clock.systemUTC(),
+    )
+
+    @Provides
+    @Singleton
     fun provideOutboxProcessor(
         pendingOpDao: PendingOpDao,
         itemDao: ItemDao,
@@ -67,6 +90,7 @@ object RepositoryModule {
         transactions: TransactionRunner,
         api: PocketBaseApi,
         tokenStore: TokenStore,
+        lock: SyncLock,
     ): OutboxProcessor = OutboxProcessor(
         pendingOpDao = pendingOpDao,
         itemDao = itemDao,
@@ -78,6 +102,7 @@ object RepositoryModule {
         json = PocketBaseApiFactory.json,
         // Only the operation type and HTTP code are logged: never names or tokens.
         log = { Log.w("OutboxProcessor", it) },
+        lock = lock,
     )
 
     @Provides

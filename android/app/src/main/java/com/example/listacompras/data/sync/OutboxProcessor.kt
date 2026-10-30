@@ -12,7 +12,6 @@ import com.example.listacompras.data.remote.dto.ItemDto
 import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.domain.model.SyncState
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -36,7 +35,7 @@ enum class SyncOutcome {
  *
  * Contract with [OutboxCoalescer]: `attempts` is committed *before* each request, so a worker killed
  * mid-request still leaves `attempts > 0` on a `CREATE` that may have reached the server. Runs are
- * serialized by a mutex, so nothing is in flight while the outbox is coalesced.
+ * serialized by the shared [SyncLock], so nothing is in flight while the outbox is coalesced.
  *
  * The server's response is not written back to Room: that is the reconciler's job.
  */
@@ -50,12 +49,12 @@ class OutboxProcessor(
     private val tokenProvider: TokenProvider,
     private val json: Json,
     private val log: (String) -> Unit,
+    private val lock: SyncLock,
 ) {
-    private val mutex = Mutex()
 
     private enum class Step { Sent, Discarded, Retry, AuthLost }
 
-    suspend fun process(): SyncOutcome = mutex.withLock { runPasses() }
+    suspend fun process(): SyncOutcome = lock.mutex.withLock { runPasses() }
 
     private suspend fun runPasses(): SyncOutcome {
         // New operations may be written while a pass runs, so repeat until the outbox is empty.
@@ -122,14 +121,13 @@ class OutboxProcessor(
         if (e.code() == 404) false else throw e
     }
 
-    private suspend fun handleHttpError(op: PendingOpEntity, code: Int): Step = when {
-        // The authenticator already tried to refresh. A surviving token means the refresh failed
-        // for network reasons; no token means the session was cleared.
-        code == 401 -> if (tokenProvider.token() != null) Step.Retry else Step.AuthLost
-        code == 408 || code == 429 || code >= 500 -> Step.Retry
-        // 400, 403, 404 on UPDATE/CREATE...: it will never succeed, so do not block the queue.
-        else -> discard(op, "HTTP $code")
-    }
+    private suspend fun handleHttpError(op: PendingOpEntity, code: Int): Step =
+        when (classifyHttp(code, tokenProvider.token() != null)) {
+            HttpVerdict.Retry -> Step.Retry
+            HttpVerdict.AuthLost -> Step.AuthLost
+            // 400, 403, 404 (on CREATE/UPDATE): it will never succeed, so do not block the queue.
+            HttpVerdict.Discard -> discard(op, "HTTP $code")
+        }
 
     private suspend fun discard(op: PendingOpEntity, reason: String): Step {
         log("Discarded ${op.type} operation: $reason")

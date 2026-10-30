@@ -40,7 +40,7 @@ class OutboxProcessorTest {
     )
     private val processor = OutboxProcessor(
         opDao, itemDao, metaDao, tx, OutboxCoalescer(opDao, tx, json), api,
-        TokenProvider { token }, json, log = { logs += it },
+        TokenProvider { token }, json, log = { logs += it }, lock = SyncLock(),
     )
 
     private suspend fun addItem(name: String): String {

@@ -34,7 +34,7 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 `GET /api/collections/items/records?filter=list="<listId>"&sort=created&perPage=200&page=1`
 
 - Resposta: `{ page, perPage, totalPages, totalItems, items: [...] }`
-- Paginar até `page == totalPages`. O máximo de `perPage` é 500.
+- Paginar até `page >= totalPages` (ou página vazia). O máximo de `perPage` é 500. O `Reconciler` usa `perPage=500` e `sort=created,id` (o `id` desempata itens criados no mesmo instante, para a paginação ser estável).
 
 ### Criar (com ID do cliente)
 `POST /api/collections/items/records`

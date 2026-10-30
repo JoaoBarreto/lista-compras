@@ -84,6 +84,21 @@ class FakePocketBaseApi : PocketBaseApi {
     override suspend fun login(body: LoginRequest): AuthResponse = error("not used")
     override suspend fun refresh(): AuthResponse = error("not used")
     override suspend fun listLists(sort: String, perPage: Int): ListResponse<ListDto> = error("not used")
-    override suspend fun listItems(filter: String, sort: String, perPage: Int, page: Int): ListResponse<ItemDto> =
-        error("not used")
+    /** Caps `perPage` so tests can force several pages. */
+    var maxPerPage = Int.MAX_VALUE
+
+    /** Runs after a page is computed, i.e. while the client is still fetching (to simulate races). */
+    var onListItems: (suspend (page: Int) -> Unit)? = null
+
+    override suspend fun listItems(filter: String, sort: String, perPage: Int, page: Int): ListResponse<ItemDto> {
+        val listId = Regex("list=\"([^\"]*)\"").matchEntire(filter)!!.groupValues[1]
+        val response = handle {
+            val all = server.values.filter { it.list == listId }
+            val size = minOf(perPage, maxPerPage)
+            val totalPages = maxOf(1, (all.size + size - 1) / size)
+            ListResponse(page, size, totalPages, all.size, all.drop((page - 1) * size).take(size))
+        }
+        onListItems?.invoke(page)
+        return response
+    }
 }

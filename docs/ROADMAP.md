@@ -52,7 +52,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 ## Fase 4 · Sincronização e realtime
 - [x] **4.1** `SyncWorker`: envia o outbox por ordem, com tratamento de erros da tabela de [API](API.md#erros-comuns)
   - ✔ Teste: com API falsa a falhar e depois a recuperar, o outbox esvazia sem duplicar itens
-- [ ] **4.2** `Reconciler` (pull completo)
+- [x] **4.2** `Reconciler` (pull completo)
   - ✔ Teste: remoto substitui local, exceto itens com operações pendentes; apagamentos remotos são aplicados
 - [ ] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
   - ✔ Duas instâncias (dois telemóveis/emuladores): alteração num aparece no outro em segundos

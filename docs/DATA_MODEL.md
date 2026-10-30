@@ -88,7 +88,7 @@ Base de dados `lista_compras.db` (versão 1, schema exportado em `android/app/sc
 
 - `items` (`ItemEntity`): `id` (PK), `listId`, `name`, `quantity?`, `checked`, `category?` (string crua do servidor; o mapeamento para `Category` é feito no repositório), `addedBy`, `checkedBy?`, `createdAt`, `updatedAt` (epoch millis), `syncState`. Índice `(listId, checked)`.
 - `pending_ops` (`PendingOpEntity`): `opId` (auto), `itemId`, `type` (`CREATE|UPDATE|DELETE`), `payloadJson`, `createdAt`, `attempts`. Índice em `itemId`. **Sem chave estrangeira para `items`**: um `DELETE` pendente tem de sobreviver à linha apagada.
-- `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`.
+- `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`. Chaves em uso: `activeListId`, `discardedOps` (operações descartadas), `lastFullSyncAt` (último pull com sucesso, epoch millis).
 
 DAOs: `ItemDao`, `PendingOpDao` (com `updatePayload`, usado pela coalescência), `SyncMetaDao` (com `observe(key)`, usado para a chave `activeListId`). Os testes usam base de dados em memória (`androidTest`).
 
