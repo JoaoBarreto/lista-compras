@@ -1,0 +1,9 @@
+server/.env
+server/pb_data/
+android/local.properties
+android/keystore.properties
+*.jks
+*.keystore
+.gradle/
+build/
+.idea/
