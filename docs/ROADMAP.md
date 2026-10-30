@@ -16,13 +16,13 @@ Docs: [SERVER_SETUP](SERVER_SETUP.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ `https://<maquina>.<tailnet>.ts.net:8443/api/health` responde a partir de um telemóvel com Tailscale
 - [x] **0.4** Criar as duas contas de utilizador e a lista "Compras"
   - ✔ Login por `curl` devolve token para ambas
-- [ ] **0.5** Backups
+- [x] **0.5** Backups
   - ✔ Backup diário configurado, cópia para outro disco, restauro testado uma vez
 
 ## Fase 1 · Esqueleto Android
 Docs: [ANDROID_SETUP](ANDROID_SETUP.md), [ARCHITECTURE](ARCHITECTURE.md)
 
-- [ ] **1.1** Criar projeto Compose em `android/` com version catalog e plugins
+- [x] **1.1** Criar projeto Compose em `android/` com version catalog e plugins
   - ✔ `./gradlew assembleDebug` compila
 - [ ] **1.2** Configurar Hilt, estrutura de pacotes, tema Material 3, `SERVER_URL` via `BuildConfig`
   - ✔ App abre num ecrã vazio com tema; `BuildConfig.SERVER_URL` correto
