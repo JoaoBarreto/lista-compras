@@ -1,0 +1,85 @@
+# Roadmap
+
+Regras: uma tarefa de cada vez, por ordem. Marcar `[x]` só quando **todos** os critérios de aceitação passarem. Para o contexto de cada fase, ver os documentos indicados.
+
+---
+
+## Fase 0 · Servidor
+Docs: [SERVER_SETUP](SERVER_SETUP.md), [DATA_MODEL](DATA_MODEL.md)
+
+- [x] **0.1** Criar `server/` com `Dockerfile`, `docker-compose.yml`, `.env.example`, `.gitignore`
+  - ✔ `docker compose up -d --build` arranca; `curl http://127.0.0.1:8090/api/health` devolve 200
+- [x] **0.2** Criar superuser e collections (`users` ajustada, `lists`, `items`) com regras
+  - ✔ Existem migrações em `server/pb_migrations/` e estão em git
+  - ✔ Pedido sem token a `items` não devolve dados
+- [x] **0.3** Tailscale no host + `tailscale serve --bg --https=8443 8090`
+  - ✔ `https://<maquina>.<tailnet>.ts.net:8443/api/health` responde a partir de um telemóvel com Tailscale
+- [x] **0.4** Criar as duas contas de utilizador e a lista "Compras"
+  - ✔ Login por `curl` devolve token para ambas
+- [ ] **0.5** Backups
+  - ✔ Backup diário configurado, cópia para outro disco, restauro testado uma vez
+
+## Fase 1 · Esqueleto Android
+Docs: [ANDROID_SETUP](ANDROID_SETUP.md), [ARCHITECTURE](ARCHITECTURE.md)
+
+- [ ] **1.1** Criar projeto Compose em `android/` com version catalog e plugins
+  - ✔ `./gradlew assembleDebug` compila
+- [ ] **1.2** Configurar Hilt, estrutura de pacotes, tema Material 3, `SERVER_URL` via `BuildConfig`
+  - ✔ App abre num ecrã vazio com tema; `BuildConfig.SERVER_URL` correto
+- [ ] **1.3** Navegação com dois destinos (login, lista) e strings em PT-PT
+  - ✔ Navega entre placeholders; sem strings hardcoded
+
+## Fase 2 · Rede e autenticação
+Docs: [API](API.md)
+
+- [ ] **2.1** DTOs, `PocketBaseApi`, `AuthInterceptor`, parser de datas do PocketBase
+  - ✔ Testes com MockWebServer para login, listar, criar, atualizar, apagar
+- [ ] **2.2** `TokenStore` + `AuthRepository` + ecrã de login
+  - ✔ Login real contra o servidor; token persiste após fechar a app; erros mostram mensagem clara
+- [ ] **2.3** Renovação de token e tratamento de 401
+  - ✔ Teste unitário: 401 → refresh → repete pedido; refresh falhado → volta ao login
+
+## Fase 3 · Dados locais e repositório (offline-first)
+Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
+
+- [ ] **3.1** Room: `ItemEntity`, `PendingOpEntity`, `SyncMetaEntity`, DAOs
+  - ✔ Testes instrumentados dos DAOs
+- [ ] **3.2** `ItemRepository`: `observeItems()`, `add`, `setChecked`, `delete`, `clearChecked`, tudo com escrita local + outbox na mesma transação
+  - ✔ Testes unitários: cada operação altera `items` e cria a `pending_op` correta
+- [ ] **3.3** `OutboxCoalescer`
+  - ✔ Testes: `CREATE+UPDATE`→`CREATE`, `CREATE+DELETE`→nada, `UPDATE+UPDATE`→um `UPDATE`
+
+## Fase 4 · Sincronização e realtime
+- [ ] **4.1** `SyncWorker`: envia o outbox por ordem, com tratamento de erros da tabela de [API](API.md#erros-comuns)
+  - ✔ Teste: com API falsa a falhar e depois a recuperar, o outbox esvazia sem duplicar itens
+- [ ] **4.2** `Reconciler` (pull completo)
+  - ✔ Teste: remoto substitui local, exceto itens com operações pendentes; apagamentos remotos são aplicados
+- [ ] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
+  - ✔ Duas instâncias (dois telemóveis/emuladores): alteração num aparece no outro em segundos
+- [ ] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
+  - ✔ Reflete corretamente modo avião ligado/desligado
+
+## Fase 5 · Interface
+- [ ] **5.1** `ShoppingViewModel` + `UiState` (por comprar / comprados / estado de sync)
+  - ✔ Testes com Turbine
+- [ ] **5.2** Ecrã da lista: duas secções, campo fixo de adição rápida, toque para marcar, deslizar para apagar, "Limpar comprados"
+  - ✔ Funciona com avião ligado; teclado não tapa o campo de adição
+- [ ] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
+  - ✔ Visível e compreensível nos quatro estados
+- [ ] **5.4** Estados vazios, modo escuro, acessibilidade básica (content descriptions, alvos de toque ≥ 48dp)
+
+## Fase 6 · Polimento e entrega
+- [ ] **6.1** Revisão de erros e logs (sem dados sensíveis), lint limpo
+- [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
+  - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
+- [ ] **6.3** Build release assinada e instalação nos dois telemóveis
+  - ✔ Atualização por cima mantém os dados
+
+## Fase 7 · Ideias futuras (fora do MVP)
+
+- [ ] Várias listas (supermercado, farmácia…) e seletor de lista
+- [ ] Categorias com agrupamento visual
+- [ ] Sugestões a partir do histórico (autocomplete)
+- [ ] Notificação opcional quando o outro adiciona/conclui itens
+- [ ] Widget no ecrã inicial
+- [ ] Partilha de texto para a app ("adicionar à lista")
