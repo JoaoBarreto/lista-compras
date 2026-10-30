@@ -1,8 +1,9 @@
-package com.example.listacompras.data.repository
+package com.example.listacompras.data.sync
 
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
+import com.example.listacompras.data.repository.TransactionRunner
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

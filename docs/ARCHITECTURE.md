@@ -58,21 +58,27 @@ ui  ──►  domain  ◄──  data
 ### Regras
 
 1. **IDs no cliente:** itens criados offline recebem um ID de 15 caracteres `[a-z0-9]`, aceite pelo PocketBase no `POST`.
-2. **Coalescência** (`OutboxCoalescer`, `data/repository`): várias operações sobre o mesmo item são fundidas antes de enviar. Sobrevive sempre uma linha existente (mantém o `opId`); só o `payloadJson` muda.
+2. **Coalescência** (`OutboxCoalescer`, `data/sync`): várias operações sobre o mesmo item são fundidas antes de enviar. Sobrevive sempre uma linha existente (mantém o `opId`); só o `payloadJson` muda.
    - `CREATE` + `UPDATE`… → um `CREATE` com os patches fundidos (um `checked_by` vazio é omitido)
    - `CREATE` + … + `DELETE` → nada
    - `UPDATE`… → um `UPDATE` com os patches fundidos (o último valor de cada campo ganha)
    - `UPDATE`… + `DELETE` → só o `DELETE`
    - **`CREATE` já tentado (`attempts > 0`) fica congelado:** pode já existir no servidor (a resposta pode ter-se perdido). Não se fundem `UPDATE`s nele (um reenvio seria rejeitado por id duplicado) e um `DELETE` posterior mantém-se (senão ficava um item fantasma no servidor).
    - O congelamento só funciona se `attempts > 0` significar "pode ter chegado ao servidor": o `SyncWorker` tem de gravar `incrementAttempts` **antes** de enviar o pedido (se só incrementasse após a resposta, um worker morto a meio do `POST` deixava `attempts == 0` e o `CREATE`+`DELETE` seguinte desaparecia, deixando um item fantasma). Também só pode correr um worker de cada vez (trabalho único).
-   - Corre no início de cada execução do `SyncWorker`, antes de enviar seja o que for (assim nenhuma operação está em voo). A ligação ao worker é feita na 4.1.
+   - Corre no início de cada passagem do `OutboxProcessor`, antes de enviar seja o que for (assim nenhuma operação está em voo).
 3. **Pull completo:** ao abrir a app, ao reconectar e após esvaziar o outbox, fazer `GET` da lista completa (são centenas de itens, no máximo) e reconciliar: o remoto substitui o local, **exceto** itens com operações em `pending_ops`.
    - Isto também resolve apagamentos feitos noutro dispositivo enquanto este estava offline (um filtro por `updated` não os apanharia).
 4. **Conflitos:** *last-write-wins* ao nível do campo enviado. É aceitável para dois utilizadores e operações idempotentes (marcar/desmarcar).
-5. **Erros:**
-   - Sem rede / 5xx / timeout: manter no outbox, retry com backoff (WorkManager).
-   - 401: tentar `auth-refresh`; se falhar, voltar ao ecrã de login mantendo os dados locais.
-   - 400/404 numa operação: descartar a operação e registar (não bloquear a fila). `DELETE` com 404 conta como sucesso.
+5. **Envio** (`OutboxProcessor` em `data/sync`, chamado pelo `SyncWorker`):
+   - Percorre o outbox por `opId`, uma operação de cada vez. Antes de cada pedido grava `incrementAttempts` (ver regra do `CREATE` congelado). Em sucesso, apaga a operação e, **na mesma transação**, marca o item `SYNCED` se não restarem operações para ele. Repete até o outbox estar vazio. Uma `Mutex` garante uma execução de cada vez. A resposta do servidor não é escrita no Room (é o `Reconciler`, 4.2).
+   - Erros:
+     - Sem rede / `IOException` / 5xx / 408 / 429: parar a passagem, manter o outbox, `Result.retry()` (backoff exponencial do WorkManager).
+     - 401: o `TokenAuthenticator` já tentou renovar. Se ainda há token, o refresh falhou por rede: retry. Se não há token, a sessão terminou: `Result.failure()`; o próximo login volta a pedir sincronização.
+     - 400, 403, 404 (num `CREATE`/`UPDATE`) e payload ilegível: descartar a operação, registar só o tipo e o código HTTP (nunca nomes nem token) e incrementar `sync_meta.discardedOps` (a 4.4 usa-o para o estado "Erro"). O item local fica `SYNCED` e o pull seguinte corrige-o. O 403 não consta do desenho original; descarta-se para não bloquear a fila.
+     - `DELETE` com 404 conta como sucesso.
+     - **`CREATE` reenviado após resposta perdida:** o servidor responde 400 (id duplicado). Se a operação já tinha sido tentada, faz-se `GET items/records/{id}`: se existe, conta como enviado; se dá 404, descarta-se.
+   - Agendamento: `SyncScheduler.requestSync()` é chamado pelo repositório depois de cada escrita efetiva (fora da transação) e pelo `SessionViewModel` quando há sessão. Usa trabalho único `outbox-sync` com `ExistingWorkPolicy.APPEND_OR_REPLACE` (com `KEEP`, uma operação escrita mesmo quando uma execução termina ficava por enviar), restrição de rede `CONNECTED` e backoff exponencial.
+   - Hilt + WorkManager: `ListaComprasApp` implementa `Configuration.Provider` com `HiltWorkerFactory` e o manifesto remove o `WorkManagerInitializer` por omissão; sem isto a app falha em runtime ao instanciar o `SyncWorker`.
 
 ### Realtime (SSE)
 

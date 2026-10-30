@@ -17,7 +17,9 @@ class FakePendingOpDao : PendingOpDao {
     override suspend fun getForItem(itemId: String) = ops.filter { it.itemId == itemId }
     override suspend fun delete(opId: Long) { ops.removeAll { it.opId == opId } }
     override suspend fun deleteForItem(itemId: String) { ops.removeAll { it.itemId == itemId } }
-    override suspend fun incrementAttempts(opId: Long) = Unit
+    override suspend fun incrementAttempts(opId: Long) {
+        ops.replaceAll { if (it.opId == opId) it.copy(attempts = it.attempts + 1) else it }
+    }
     override suspend fun updatePayload(opId: Long, payloadJson: String) {
         ops.replaceAll { if (it.opId == opId) it.copy(payloadJson = payloadJson) else it }
     }

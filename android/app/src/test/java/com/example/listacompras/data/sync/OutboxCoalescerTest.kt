@@ -1,9 +1,11 @@
-package com.example.listacompras.data.repository
+package com.example.listacompras.data.sync
 
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.remote.dto.ItemDto
+import com.example.listacompras.data.repository.FakePendingOpDao
+import com.example.listacompras.data.repository.TransactionRunner
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import org.junit.Assert.assertEquals

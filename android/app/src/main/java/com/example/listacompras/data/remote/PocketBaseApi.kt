@@ -38,6 +38,10 @@ interface PocketBaseApi {
         @Query("page") page: Int = 1,
     ): ListResponse<ItemDto>
 
+    /** Used to check whether a CREATE whose response was lost reached the server (404 if not). */
+    @GET("api/collections/items/records/{id}")
+    suspend fun getItem(@Path("id") id: String): ItemDto
+
     @POST("api/collections/items/records")
     suspend fun createItem(@Body body: ItemDto): ItemDto
 

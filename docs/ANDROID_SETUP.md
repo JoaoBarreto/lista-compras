@@ -16,12 +16,12 @@ Usar `gradle/libs.versions.toml` (version catalog). **Confirmar a última versã
 |---|---|
 | UI | Compose BOM, Material 3, `material-icons-extended`, `activity-compose`, `navigation-compose` |
 | Lifecycle | `lifecycle-runtime-compose`, `lifecycle-viewmodel-compose` |
-| DI | Hilt (`hilt-android`, `hilt-compiler`, `hilt-navigation-compose`, `hilt-work`) |
+| DI | Hilt (`hilt-android`, `hilt-compiler`, `hilt-navigation-compose`, `hilt-work`; o `androidx.hilt:hilt-compiler` 1.4.0 é necessário para gerar a factory do `@HiltWorker`) |
 | Local | Room (`room-runtime`, `room-ktx`, `room-compiler` via KSP) |
 | Rede | Retrofit, `converter-kotlinx-serialization`, OkHttp, `okhttp-sse`, `logging-interceptor` (só debug) |
 | Serialização | `kotlinx-serialization-json` |
 | Coroutines | `kotlinx-coroutines-android` (fixada na mesma versão dos testes; evita que a app resolva um `core` antigo incompatível com `kotlinx-coroutines-test`) |
-| Background | `work-runtime-ktx` |
+| Background | `work-runtime-ktx` 2.12.0 (`androidx.hilt:hilt-work`/`hilt-compiler` 1.4.0; versões estáveis confirmadas no Google Maven) |
 | Preferências | `datastore-preferences` |
 | Datas | `java.time` (core library desugaring se min SDK < 26 vier a ser necessário) |
 | Testes | JUnit, `kotlinx-coroutines-test`, Turbine, MockWebServer, `room-testing`, `androidx.compose.ui:ui-test-junit4` |

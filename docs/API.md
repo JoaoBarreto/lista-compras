@@ -57,6 +57,9 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 { "checked": true, "checked_by": "<userId>" }
 ```
 
+### Ler um item
+`GET /api/collections/items/records/{id}` → o registo, ou `404`. Só serve para confirmar se um `CREATE` com resposta perdida chegou ao servidor (ver ARCHITECTURE).
+
 ### Apagar
 `DELETE /api/collections/items/records/{id}` → `204`. Tratar `404` como sucesso.
 

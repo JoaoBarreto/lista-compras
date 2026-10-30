@@ -9,6 +9,7 @@ import com.example.listacompras.data.remote.dto.CheckedPatch
 import com.example.listacompras.domain.model.Category
 import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
+import com.example.listacompras.domain.repository.SyncScheduler
 import com.example.listacompras.domain.repository.ItemRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ class ItemRepositoryImpl(
     private val currentUser: CurrentUserProvider,
     private val json: Json,
     private val clock: Clock,
+    private val syncScheduler: SyncScheduler,
     private val newId: () -> String,
 ) : ItemRepository {
 
@@ -63,14 +65,15 @@ class ItemRepositoryImpl(
             itemDao.upsert(item)
             enqueue(item.id, OpType.CREATE, json.encodeToString(item.toCreateDto()), now)
         }
+        syncScheduler.requestSync()
         return true
     }
 
     override suspend fun setChecked(id: String, checked: Boolean) {
         val userId = currentUser.currentUserId() ?: return
         val now = clock.millis()
-        transactions.run {
-            val item = itemDao.getById(id) ?: return@run
+        val changed = transactions.run {
+            val item = itemDao.getById(id) ?: return@run false
             itemDao.upsert(
                 item.copy(
                     checked = checked,
@@ -81,27 +84,33 @@ class ItemRepositoryImpl(
             )
             val patch = CheckedPatch(checked, if (checked) userId else "")
             enqueue(id, OpType.UPDATE, json.encodeToString(patch), now)
+            true
         }
+        if (changed) syncScheduler.requestSync()
     }
 
     override suspend fun delete(id: String) {
         val now = clock.millis()
-        transactions.run {
-            if (itemDao.getById(id) == null) return@run
+        val changed = transactions.run {
+            if (itemDao.getById(id) == null) return@run false
             itemDao.deleteById(id)
             enqueue(id, OpType.DELETE, DELETE_PAYLOAD, now)
+            true
         }
+        if (changed) syncScheduler.requestSync()
     }
 
     override suspend fun clearChecked() {
         val listId = activeList.listId()?.takeIf { it.isNotEmpty() } ?: return
         val now = clock.millis()
-        transactions.run {
+        val changed = transactions.run {
             val ids = itemDao.getCheckedIds(listId)
-            if (ids.isEmpty()) return@run
+            if (ids.isEmpty()) return@run false
             itemDao.deleteByIds(ids)
             ids.forEach { enqueue(it, OpType.DELETE, DELETE_PAYLOAD, now) }
+            true
         }
+        if (changed) syncScheduler.requestSync()
     }
 
     private suspend fun enqueue(itemId: String, type: OpType, payload: String, now: Long) {

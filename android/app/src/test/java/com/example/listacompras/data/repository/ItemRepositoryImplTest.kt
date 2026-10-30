@@ -22,28 +22,6 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
-private class FakeItemDao : ItemDao {
-    val items = MutableStateFlow<Map<String, ItemEntity>>(emptyMap())
-    override fun observeItems(listId: String): Flow<List<ItemEntity>> =
-        items.map { m -> m.values.filter { it.listId == listId }.sortedBy { it.createdAt } }
-    override suspend fun getItems(listId: String) = items.value.values.filter { it.listId == listId }
-    override suspend fun getById(id: String) = items.value[id]
-    override suspend fun upsert(item: ItemEntity) { items.value += item.id to item }
-    override suspend fun upsertAll(items: List<ItemEntity>) = items.forEach { upsert(it) }
-    override suspend fun deleteById(id: String) { items.value -= id }
-    override suspend fun deleteByIds(ids: List<String>) { items.value -= ids.toSet() }
-    override suspend fun getCheckedIds(listId: String) =
-        items.value.values.filter { it.listId == listId && it.checked }.map { it.id }
-    override suspend fun deleteChecked(listId: String) { deleteByIds(getCheckedIds(listId)) }
-}
-
-private class FakeActiveList(initial: String?) : ActiveListProvider {
-    val id = MutableStateFlow(initial)
-    override fun observeListId() = id
-    override suspend fun listId() = id.value
-    override suspend fun setListId(id: String) { this.id.value = id }
-}
-
 class ItemRepositoryImplTest {
 
     private val itemDao = FakeItemDao()
@@ -51,6 +29,7 @@ class ItemRepositoryImplTest {
     private val activeList = FakeActiveList("list1")
     private var userId: String? = "user1"
     private var ids = generateSequence(1) { it + 1 }.map { "id%012d".format(it) }.iterator()
+    private val scheduler = CountingSyncScheduler()
     private val clock = Clock.fixed(Instant.ofEpochMilli(1_000), ZoneOffset.UTC)
 
     private val repo = ItemRepositoryImpl(
@@ -63,6 +42,7 @@ class ItemRepositoryImplTest {
         currentUser = object : CurrentUserProvider { override fun currentUserId() = userId },
         json = PocketBaseApiFactory.json,
         clock = clock,
+        syncScheduler = scheduler,
         newId = { ids.next() },
     )
 
@@ -175,6 +155,30 @@ class ItemRepositoryImplTest {
         assertEquals(setOf(b), itemDao.items.value.keys)
         assertEquals(listOf(OpType.DELETE, OpType.DELETE), opDao.ops.map { it.type })
         assertEquals(setOf(a, c), opDao.ops.map { it.itemId }.toSet())
+    }
+
+    @Test
+    fun `each effective write requests a sync and no-ops or failed adds do not`() = runTest {
+        activeList.id.value = null
+        repo.add("x")
+        activeList.id.value = "list1"
+        assertEquals(0, scheduler.requests)
+
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+        repo.setChecked(id, true)
+        repo.delete(id)
+        assertEquals(3, scheduler.requests)
+
+        repo.setChecked("missing", true)
+        repo.delete("missing")
+        repo.clearChecked()
+        assertEquals(3, scheduler.requests)
+
+        repo.add("A")
+        repo.setChecked(itemDao.items.value.keys.single(), true)
+        repo.clearChecked()
+        assertEquals(6, scheduler.requests)
     }
 
     @Test

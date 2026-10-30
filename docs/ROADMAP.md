@@ -50,7 +50,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Testes: `CREATE+UPDATE`→`CREATE`, `CREATE+DELETE`→nada, `UPDATE+UPDATE`→um `UPDATE`
 
 ## Fase 4 · Sincronização e realtime
-- [ ] **4.1** `SyncWorker`: envia o outbox por ordem, com tratamento de erros da tabela de [API](API.md#erros-comuns)
+- [x] **4.1** `SyncWorker`: envia o outbox por ordem, com tratamento de erros da tabela de [API](API.md#erros-comuns)
   - ✔ Teste: com API falsa a falhar e depois a recuperar, o outbox esvazia sem duplicar itens
 - [ ] **4.2** `Reconciler` (pull completo)
   - ✔ Teste: remoto substitui local, exceto itens com operações pendentes; apagamentos remotos são aplicados

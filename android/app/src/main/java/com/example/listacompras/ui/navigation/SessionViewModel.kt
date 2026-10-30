@@ -2,14 +2,16 @@ package com.example.listacompras.ui.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.listacompras.domain.repository.SyncScheduler
 import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.domain.repository.AuthRepository
 import com.example.listacompras.domain.repository.ListRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,6 +21,7 @@ import javax.inject.Inject
 class SessionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val listRepository: ListRepository,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthState> = authRepository.authState
@@ -30,9 +33,15 @@ class SessionViewModel @Inject constructor(
         // afterwards the list id is local and adding items works offline.
         viewModelScope.launch {
             authRepository.authState
-                .filterIsInstance<AuthState.LoggedIn>()
-                .distinctUntilChangedBy { it.session.userId }
-                .collect { listRepository.ensureActiveList() }
+                // Map before filtering so LoggedIn -> LoggedOut -> LoggedIn (same user) fires again.
+                .map { (it as? AuthState.LoggedIn)?.session?.userId }
+                .distinctUntilChanged()
+                .filterNotNull()
+                .collect {
+                    listRepository.ensureActiveList()
+                    // Restarts sending after a login (e.g. a run that ended because the session was lost).
+                    syncScheduler.requestSync()
+                }
         }
     }
 
