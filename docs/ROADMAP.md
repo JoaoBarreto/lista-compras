@@ -59,6 +59,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Estado: implementada e verificada num telemóvel contra o servidor real (create/update/delete, reconexão ao reabrir). Falta o teste com duas instâncias, possível só depois da 5.2.
 - [ ] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
   - ✔ Reflete corretamente modo avião ligado/desligado
+  - Estado: implementada e testada na JVM; falta confirmar o modo avião num telemóvel (`adb logcat -s SyncStatus Realtime`).
 
 ## Fase 5 · Interface
 - [ ] **5.1** `ShoppingViewModel` + `UiState` (por comprar / comprados / estado de sync)

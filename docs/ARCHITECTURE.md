@@ -112,14 +112,20 @@ ui  ──►  domain  ◄──  data
 
 ## Estado de sincronização (UI)
 
-Derivado, não obtido do Tailscale (a app não sabe se o Tailscale está ativo; só sabe se alcança o servidor):
+Derivado, não obtido do Tailscale (a app não sabe se o Tailscale está ativo; só sabe se alcança o servidor). `SyncStatusProvider` (domínio) expõe `status: Flow<SyncStatus>` e `acknowledgeErrors()`; a implementação é `SyncStatusMonitor` (`data/sync`), que combina `pending_ops` (contagem), `NetworkMonitor`, `ServerReachability` e as chaves `discardedOps`/`discardedAck`. A função pura `deriveSyncStatus` aplica esta precedência, da mais alta para a mais baixa:
 
 | Estado | Condição |
 |---|---|
-| Sincronizado | outbox vazio e último pull/SSE OK |
-| A sincronizar | outbox com operações e rede disponível |
-| Offline | sem rede ou servidor inalcançável (mostrar dica: "Verifica se o Tailscale está ligado") |
-| Erro | falha persistente de autenticação ou operações descartadas |
+| Erro | há operações descartadas pelo servidor que o utilizador ainda não reconheceu (`discardedOps > discardedAck`) |
+| Offline | sem rede, ou servidor inalcançável (mostrar dica: "Verifica se o Tailscale está ligado") |
+| A sincronizar | outbox com operações, ou alcançabilidade ainda desconhecida (acabou de ligar/voltar a rede) |
+| Sincronizado | rede, servidor alcançável e outbox vazio |
+
+- **"A sincronizar" com alcançabilidade desconhecida** vai além da tabela original: evita mostrar "Sincronizado" antes de se saber se o servidor responde.
+- **Erro só para descartes.** Perder a sessão já leva o utilizador ao ecrã de login, e um 401 com token ainda presente é um problema de rede (aparece como Offline). Por isso a falha de autenticação não é um estado à parte. Um descarte novo volta a mostrar o erro depois de reconhecido (`acknowledgeErrors()` guarda o valor atual em `discardedAck`; a 5.3 chama-o).
+- **Rede:** `AndroidNetworkMonitor` ignora redes VPN (`NET_CAPABILITY_NOT_VPN`): o Tailscale corre como VPN, e a rede *por omissão* pode continuar "disponível" em modo avião. Conta-se uma rede real com internet.
+- **Alcançabilidade** (`ServerReachability`: Desconhecida / Alcançável / Inalcançável) tem **uma só fonte**, o `RealtimeClient`: Alcançável depois de subscrever e fazer o pull; Inalcançável numa falha de ligação (não num fecho normal, para a reconexão de 5 min por inatividade não mostrar "Offline"); Desconhecida quando a ligação (re)começa. O estado só é visível com a app em primeiro plano, onde o `RealtimeClient` corre sempre.
+- **O `RealtimeClient` só liga com token *e* rede.** Cada passagem offline→online (ou novo token) reinicia o ciclo com backoff a zero. Isto também mata ligações "zumbi": uma ligação SSE parada através da VPN pode sobreviver ao modo avião sem nunca dar erro.
 
 ## Testes
 

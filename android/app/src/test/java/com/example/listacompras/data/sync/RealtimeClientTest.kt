@@ -43,6 +43,8 @@ class RealtimeClientTest {
     private var notEventStream = false
     private val backoffAttempts = CopyOnWriteArrayList<Int>()
     private val tokens = MutableStateFlow<String?>("tok1")
+    private val network = MutableStateFlow(true)
+    private val reachability = ServerReachability()
     private val itemDao = FakeItemDao()
     private val scheduler = CountingSyncScheduler()
     private val logs = CopyOnWriteArrayList<String>()
@@ -94,6 +96,8 @@ class RealtimeClientTest {
             baseUrl = server.url("/").toString(),
             api = PocketBaseApiFactory.create(server.url("/").toString(), http),
             tokens = tokens,
+            network = network,
+            reachability = reachability,
             applier = applier,
             pull = FullPull { pulls.incrementAndGet(); pullResult },
             scheduler = scheduler,
@@ -214,5 +218,49 @@ class RealtimeClientTest {
         runClient { awaitUntil { backoffAttempts.size >= 3 } }
 
         assertTrue(backoffAttempts.take(3).all { it == 0 })
+    }
+
+    @Test
+    fun `reachability becomes Reachable only after subscribing and pulling`() {
+        runClient { awaitUntil { reachability.state.value == Reachability.Reachable } }
+
+        assertTrue(pulls.get() >= 1)
+    }
+
+    @Test
+    fun `reachability is Unreachable while the pull keeps failing`() {
+        pullResult = SyncOutcome.Retry
+
+        runClient { awaitUntil { reachability.state.value == Reachability.Unreachable } }
+    }
+
+    @Test
+    fun `going offline stops the connection and coming back starts a fresh one`() {
+        runClient {
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+            network.value = false
+            delay(200)
+            val frozen = gets.get()
+            delay(300)
+            assertEquals(frozen, gets.get())
+
+            network.value = true
+            awaitUntil { gets.get() > frozen }
+            awaitUntil { reachability.state.value == Reachability.Reachable }
+        }
+    }
+
+    @Test
+    fun `coming back online restarts the backoff from zero`() {
+        pullResult = SyncOutcome.Retry
+        runClient {
+            awaitUntil { backoffAttempts.size >= 3 }
+            network.value = false
+            delay(100)
+            network.value = true
+            val before = backoffAttempts.size
+            awaitUntil { backoffAttempts.size > before }
+            assertEquals(0, backoffAttempts[before])
+        }
     }
 }

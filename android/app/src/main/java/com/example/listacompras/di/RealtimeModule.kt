@@ -9,9 +9,17 @@ import com.example.listacompras.data.remote.PocketBaseApi
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.repository.ActiveListProvider
 import com.example.listacompras.data.repository.TransactionRunner
+import com.example.listacompras.data.sync.AndroidNetworkMonitor
+import com.example.listacompras.data.sync.NetworkMonitor
 import com.example.listacompras.data.sync.RealtimeClient
 import com.example.listacompras.data.sync.RealtimeEventApplier
 import com.example.listacompras.data.sync.Reconciler
+import com.example.listacompras.data.sync.ServerReachability
+import com.example.listacompras.data.sync.SyncStatusMonitor
+import com.example.listacompras.data.local.dao.SyncMetaDao
+import com.example.listacompras.domain.repository.SyncStatusProvider
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.example.listacompras.data.sync.SyncLock
 import com.example.listacompras.domain.repository.RealtimeSync
 import com.example.listacompras.domain.repository.SyncScheduler
@@ -45,6 +53,27 @@ object RealtimeModule {
 
     @Provides
     @Singleton
+    fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor = AndroidNetworkMonitor(context)
+
+    @Provides
+    @Singleton
+    fun provideServerReachability(): ServerReachability = ServerReachability()
+
+    @Provides
+    @Singleton
+    fun provideSyncStatusProvider(
+        pendingOpDao: PendingOpDao,
+        syncMetaDao: SyncMetaDao,
+        network: NetworkMonitor,
+        reachability: ServerReachability,
+    ): SyncStatusProvider = SyncStatusMonitor(
+        pendingOpDao, syncMetaDao, network, reachability,
+        // Temporary diagnostics (only values, no data) until the status is visible in the UI (5.3).
+        log = { if (BuildConfig.DEBUG) Log.d("SyncStatus", it) },
+    )
+
+    @Provides
+    @Singleton
     fun provideRealtimeSync(
         client: OkHttpClient,
         api: PocketBaseApi,
@@ -52,12 +81,16 @@ object RealtimeModule {
         applier: RealtimeEventApplier,
         reconciler: Reconciler,
         scheduler: SyncScheduler,
+        network: NetworkMonitor,
+        reachability: ServerReachability,
     ): RealtimeSync = RealtimeClient(
         // A stream never ends on its own, so it must not have a read timeout.
         sseClient = client.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build(),
         baseUrl = BuildConfig.SERVER_URL,
         api = api,
         tokens = tokenStore.tokenFlow,
+        network = network.online,
+        reachability = reachability,
         applier = applier,
         pull = reconciler,
         scheduler = scheduler,

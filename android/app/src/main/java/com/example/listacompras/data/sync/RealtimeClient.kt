@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -55,6 +57,8 @@ class RealtimeClient(
     private val baseUrl: String,
     private val api: PocketBaseApi,
     private val tokens: Flow<String?>,
+    private val network: Flow<Boolean>,
+    private val reachability: ServerReachability,
     private val applier: RealtimeEventApplier,
     private val pull: FullPull,
     private val scheduler: SyncScheduler,
@@ -71,9 +75,17 @@ class RealtimeClient(
     private class SessionEnded : Exception()
 
     override suspend fun run() {
-        tokens.collectLatest { token ->
-            if (token != null) connectLoop()
-        }
+        // Connect only with a token *and* a network. Every offline -> online change (and every new
+        // token) starts a fresh loop with no accumulated backoff. This also kills a "zombie" stream:
+        // an idle connection through the VPN can survive airplane mode without ever erroring.
+        combine(tokens, network) { token, online -> token.takeIf { online } }
+            .distinctUntilChanged()
+            .collectLatest { token ->
+                if (token != null) {
+                    reachability.markUnknown()
+                    connectLoop()
+                }
+            }
     }
 
     private suspend fun connectLoop() {
@@ -87,8 +99,10 @@ class RealtimeClient(
             } catch (e: SessionEnded) {
                 return
             } catch (e: ConnectionLost) {
+                reachability.markUnreachable()
                 log("Realtime connection lost: ${e.message}")
             } catch (e: Exception) {
+                reachability.markUnreachable()
                 // Anything else (network error, a proxy answering with HTML, a malformed date...)
                 // must not escape into the activity's scope and crash the app. Log only the type.
                 log("Realtime connection lost: ${e.javaClass.simpleName}")
@@ -127,6 +141,7 @@ class RealtimeClient(
         // Only a connection that subscribed *and* pulled counts as healthy. Resetting earlier would
         // make a persistently failing pull reconnect every second, forever.
         onConnected()
+        reachability.markReachable()
         scheduler.requestSync()
     }
 
