@@ -25,7 +25,7 @@ Usar `gradle/libs.versions.toml` (version catalog). **Confirmar a última versã
 | Datas | `java.time` (core library desugaring se min SDK < 26 vier a ser necessário) |
 | Testes | JUnit, `kotlinx-coroutines-test`, Turbine, MockWebServer, `room-testing`, `androidx.compose.ui:ui-test-junit4` |
 
-Plugins: `com.android.application`, `org.jetbrains.kotlin.android`, `org.jetbrains.kotlin.plugin.compose`, `org.jetbrains.kotlin.plugin.serialization`, `com.google.devtools.ksp`, `com.google.dagger.hilt.android`.
+Plugins: `com.android.application`, `O AGP 9 inclui o Kotlin embutido; não aplicar o plugin kotlin.android.`, `org.jetbrains.kotlin.plugin.compose`, `org.jetbrains.kotlin.plugin.serialization`, `com.google.devtools.ksp`, `com.google.dagger.hilt.android`.
 
 ## Estrutura de pacotes
 
@@ -62,7 +62,9 @@ com.example.listacompras
 SERVER_URL=https://<maquina>.<tailnet>.ts.net:8443/
 ```
 
-`app/build.gradle.kts`: ler a propriedade e expor via `buildConfigField("String", "SERVER_URL", "\"...\"")`, com `buildFeatures { buildConfig = true }`. A URL termina em `/` (requisito do Retrofit).
+`app/build.gradle.kts`: lê a propriedade e expõe-na via `buildConfigField("String", "SERVER_URL", "\"...\"")`, com `buildFeatures { buildConfig = true }`. A URL termina em `/` (requisito do Retrofit).
+
+O build falha com uma mensagem clara se `SERVER_URL` faltar em `local.properties` ou não terminar em `/`.
 
 ## Manifest
 

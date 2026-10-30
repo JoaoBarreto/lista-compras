@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">ListaCompras</string>
+
+    <string name="login_title">Iniciar sessão</string>
+    <string name="login_placeholder">Ecrã de início de sessão (provisório)</string>
+    <string name="login_button_enter">Entrar</string>
+
+    <string name="shopping_title">Compras</string>
+    <string name="shopping_placeholder">A lista de compras vai aparecer aqui.</string>
+    <string name="shopping_button_logout">Terminar sessão</string>
 </resources>

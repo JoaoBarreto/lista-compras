@@ -24,9 +24,9 @@ Docs: [ANDROID_SETUP](ANDROID_SETUP.md), [ARCHITECTURE](ARCHITECTURE.md)
 
 - [x] **1.1** Criar projeto Compose em `android/` com version catalog e plugins
   - ✔ `./gradlew assembleDebug` compila
-- [ ] **1.2** Configurar Hilt, estrutura de pacotes, tema Material 3, `SERVER_URL` via `BuildConfig`
+- [x] **1.2** Configurar Hilt, estrutura de pacotes, tema Material 3, `SERVER_URL` via `BuildConfig`
   - ✔ App abre num ecrã vazio com tema; `BuildConfig.SERVER_URL` correto
-- [ ] **1.3** Navegação com dois destinos (login, lista) e strings em PT-PT
+- [x] **1.3** Navegação com dois destinos (login, lista) e strings em PT-PT
   - ✔ Navega entre placeholders; sem strings hardcoded
 
 ## Fase 2 · Rede e autenticação
