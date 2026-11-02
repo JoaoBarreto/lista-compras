@@ -30,6 +30,11 @@ enum class SyncOutcome {
     AuthLost,
 }
 
+/** Sends the outbox; an interface so the realtime client can be tested with a fake. */
+fun interface OutboxSender {
+    suspend fun process(): SyncOutcome
+}
+
 /**
  * Sends the outbox to the server in order, one operation at a time.
  *
@@ -50,11 +55,15 @@ class OutboxProcessor(
     private val json: Json,
     private val log: (String) -> Unit,
     private val lock: SyncLock,
-) {
+) : OutboxSender {
 
     private enum class Step { Sent, Discarded, Retry, AuthLost }
 
-    suspend fun process(): SyncOutcome = lock.mutex.withLock { runPasses() }
+    override suspend fun process(): SyncOutcome = lock.mutex.withLock {
+        // Without a session every request would be rejected as unauthorized and discarded, losing
+        // the queued operations. Keep them until the next login.
+        if (tokenProvider.token().isNullOrBlank()) SyncOutcome.AuthLost else runPasses()
+    }
 
     private suspend fun runPasses(): SyncOutcome {
         // New operations may be written while a pass runs, so repeat until the outbox is empty.

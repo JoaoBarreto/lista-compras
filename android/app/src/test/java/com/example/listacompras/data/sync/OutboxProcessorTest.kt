@@ -49,6 +49,19 @@ class OutboxProcessorTest {
     }
 
     @Test
+    fun `without a session nothing is sent, discarded or changed`() = runTest {
+        addItem("Leite")
+        token = null
+
+        assertEquals(SyncOutcome.AuthLost, processor.process())
+
+        assertEquals(0, api.calls)
+        assertEquals(1, opDao.getAll().size)
+        assertEquals(0, opDao.getAll().single().attempts)
+        assertEquals(null, metaDao.get(OutboxProcessor.DISCARDED_KEY))
+    }
+
+    @Test
     fun `an empty outbox is done without calls`() = runTest {
         assertEquals(SyncOutcome.Done, processor.process())
         assertEquals(0, api.calls)

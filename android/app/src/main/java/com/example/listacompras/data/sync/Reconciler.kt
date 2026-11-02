@@ -42,6 +42,8 @@ class Reconciler(
 ) : FullPull {
 
     override suspend fun pull(): SyncOutcome = lock.mutex.withLock {
+        // Logged out, the server may answer with an empty list, which would wipe the local items.
+        if (tokenProvider.token().isNullOrBlank()) return@withLock SyncOutcome.AuthLost
         try {
             val listId = activeList.listId()?.takeIf { it.isNotEmpty() }
                 ?: run {

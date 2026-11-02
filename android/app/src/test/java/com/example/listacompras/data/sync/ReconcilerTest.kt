@@ -84,6 +84,16 @@ class ReconcilerTest {
     }
 
     @Test
+    fun `without a session the local items are untouched`() = runTest {
+        itemDao.upsert(local("a"))
+        token = null
+
+        assertEquals(SyncOutcome.AuthLost, reconciler.pull())
+
+        assertEquals(setOf("a"), itemDao.items.value.keys)
+    }
+
+    @Test
     fun `an item with a pending UPDATE keeps its local version`() = runTest {
         repo.add("Leite")
         val id = itemDao.items.value.keys.single()

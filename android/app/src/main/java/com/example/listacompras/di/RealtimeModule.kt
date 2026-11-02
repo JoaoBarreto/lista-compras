@@ -11,6 +11,7 @@ import com.example.listacompras.data.repository.ActiveListProvider
 import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.data.sync.AndroidNetworkMonitor
 import com.example.listacompras.data.sync.NetworkMonitor
+import com.example.listacompras.data.sync.OutboxProcessor
 import com.example.listacompras.data.sync.RealtimeClient
 import com.example.listacompras.data.sync.RealtimeEventApplier
 import com.example.listacompras.data.sync.Reconciler
@@ -80,6 +81,7 @@ object RealtimeModule {
         tokenStore: TokenStore,
         applier: RealtimeEventApplier,
         reconciler: Reconciler,
+        outboxProcessor: OutboxProcessor,
         scheduler: SyncScheduler,
         network: NetworkMonitor,
         reachability: ServerReachability,
@@ -92,6 +94,7 @@ object RealtimeModule {
         network = network.online,
         reachability = reachability,
         applier = applier,
+        outbox = outboxProcessor,
         pull = reconciler,
         scheduler = scheduler,
         json = PocketBaseApiFactory.json,

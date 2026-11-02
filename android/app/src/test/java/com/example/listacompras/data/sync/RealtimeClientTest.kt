@@ -39,6 +39,8 @@ class RealtimeClientTest {
     private val posts = CopyOnWriteArrayList<Post>()
     private val pulls = AtomicInteger()
     private var pullResult = SyncOutcome.Done
+    private val outboxRuns = AtomicInteger()
+    private var outboxResult = SyncOutcome.Done
     private var pullGate: CompletableDeferred<Unit>? = null
     private var subscribeCode = 204
     private var eventForFirstStream: String? = null
@@ -101,6 +103,7 @@ class RealtimeClientTest {
             network = network,
             reachability = reachability,
             applier = applier,
+            outbox = OutboxSender { outboxRuns.incrementAndGet(); outboxResult },
             pull = FullPull { pulls.incrementAndGet(); pullGate?.await(); pullResult },
             scheduler = scheduler,
             json = json,
@@ -170,6 +173,23 @@ class RealtimeClientTest {
 
         runClient { awaitUntil { pulls.get() >= 2 } }
 
+        assertEquals(0, scheduler.requests)
+    }
+
+    @Test
+    fun `queued changes are sent before the pull on every connection`() {
+        runClient { awaitUntil { pulls.get() >= 1 } }
+
+        assertTrue(outboxRuns.get() >= 1)
+    }
+
+    @Test
+    fun `a failed outbox run skips the pull and reconnects`() {
+        outboxResult = SyncOutcome.Retry
+
+        runClient { awaitUntil { outboxRuns.get() >= 2 } }
+
+        assertEquals(0, pulls.get())
         assertEquals(0, scheduler.requests)
     }
 

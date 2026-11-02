@@ -62,6 +62,7 @@ class RealtimeClient(
     private val network: Flow<Boolean>,
     private val reachability: ServerReachability,
     private val applier: RealtimeEventApplier,
+    private val outbox: OutboxSender,
     private val pull: FullPull,
     private val scheduler: SyncScheduler,
     private val json: Json,
@@ -151,6 +152,13 @@ class RealtimeClient(
         }
         if (!response.isSuccessful) throw ConnectionLost("subscribe HTTP ${response.code()}")
         log("Realtime subscribed")
+        // Send queued local changes first (as the sync worker does): the work manager may be waiting
+        // out a backoff built up while offline, and the pull must not run over unsent changes.
+        when (outbox.process()) {
+            SyncOutcome.Done -> Unit
+            SyncOutcome.Retry -> throw ConnectionLost("outbox failed")
+            SyncOutcome.AuthLost -> throw SessionEnded()
+        }
         when (pull.pull()) {
             SyncOutcome.Done -> Unit
             SyncOutcome.Retry -> throw ConnectionLost("pull failed")
