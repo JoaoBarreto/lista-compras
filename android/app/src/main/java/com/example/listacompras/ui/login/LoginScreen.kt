@@ -4,6 +4,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.requiredSize
@@ -65,6 +70,7 @@ fun LoginRoute(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(
     state: LoginUiState,
@@ -88,35 +94,43 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .imePadding()
+                // Scrolls when the keyboard leaves too little room; still centred when there is plenty.
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(112.dp).clip(CircleShape).background(Color(0xFFFA5803)),
-            ) {
-                // Decorative: the name below says the same. Oversized and cropped to fill the circle.
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.requiredSize(168.dp),
-                )
+            // Compact header while typing: the logo and tagline make way for the fields.
+            val keyboardOpen = WindowInsets.isImeVisible
+            if (!keyboardOpen) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(112.dp).clip(CircleShape).background(Color(0xFFFA5803)),
+                ) {
+                    // Decorative: the name below says the same. Oversized and cropped to fill the circle.
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.requiredSize(168.dp),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
-            Spacer(Modifier.height(16.dp))
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
                 textAlign = TextAlign.Center,
             )
-            Text(
-                text = stringResource(R.string.login_tagline),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(32.dp))
+            if (!keyboardOpen) {
+                Text(
+                    text = stringResource(R.string.login_tagline),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Spacer(Modifier.height(if (keyboardOpen) 16.dp else 32.dp))
             Text(
                 text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.titleMedium,

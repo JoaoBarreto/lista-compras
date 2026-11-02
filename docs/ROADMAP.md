@@ -130,7 +130,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Login: fundo em gradiente (laranja quente do ícone no topo, quase preto em baixo no modo escuro; creme no claro), ícone circular, nome "Life Manager" e frase "A vida a dois, organizada."; formulário legível nos dois modos
   - Quantidade: legenda curta "Qtd." (descrição para TalkBack "Quantidade (opcional)") e campo com a altura do campo do nome
   - ✔ Verificado no telemóvel (claro, escuro, letra grande, teclado aberto no login)
-  - Estado: implementado em 2026-11-02 (release v5); por verificar. Resultado da v4: 9.1 e 9.2 confirmadas no telemóvel, exceto a legenda do campo de quantidade (a causa desta tarefa).
+  - Estado: implementado em 2026-11-02 (release v6); por verificar. O teclado cortava o formulário na v5: agora o ecrã faz scroll e esconde o logo com o teclado aberto. Resultado da v4: 9.1 e 9.2 confirmadas no telemóvel, exceto a legenda do campo de quantidade (a causa desta tarefa).
 - [ ] **9.3** Base das notificações e aviso de itens novos nas Compras
   - Permissão `POST_NOTIFICATIONS` (Android 13+, pedida em contexto), canais de notificação, `NotificationChecker` periódico (WorkManager, ~15 min), marcador `lastNotified*` em `sync_meta`, interruptor nas definições
   - ✔ Testes unitários: só itens de outro utilizador; vários itens → uma notificação agrupada; nunca duas vezes o mesmo item; sem permissão não falha
