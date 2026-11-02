@@ -135,3 +135,10 @@ Derivado, não obtido do Tailscale (a app não sabe se o Tailscale está ativo; 
 | API | Retrofit + DTOs | MockWebServer |
 | Instrumentados | DAOs Room | AndroidX Test |
 | UI | ecrã da lista | Compose UI Test |
+
+## Logs
+
+- Nunca se regista: tokens, palavras-passe, nomes ou quantidades de itens, dados de utilizadores, URL/hostname do servidor. De exceções de rede regista-se só o tipo (`UnknownHostException` inclui o hostname na mensagem).
+- Tag `Realtime` (`RealtimeClient`, `RealtimeEventApplier`): ciclo de vida da ligação, ações dos eventos (`create|update|delete`), códigos HTTP. Nível `d`, **só em debug** (`BuildConfig.DEBUG` no módulo Hilt).
+- Tag `OutboxProcessor`: nível `w`, também em release. Regista só o tipo da operação e o código HTTP de operações descartadas; é o único rasto de uma operação perdida.
+- `adb logcat -s Realtime OutboxProcessor` num APK de debug.

@@ -80,6 +80,11 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 
 ## Fase 6 · Polimento e entrega
 - [ ] **6.1** Revisão de erros e logs (sem dados sensíveis), lint limpo
+  - ✔ Nenhum log contém tokens, palavras-passe, nomes/quantidades de itens, nomes de utilizadores, emails nem o URL do servidor
+  - ✔ Logs de diagnóstico (`d`) só em builds de debug
+  - ✔ Sem avisos do compilador; `lintDebug` só com avisos de atualização de versões (geridas à mão)
+  - ✔ Sem textos visíveis hardcoded
+  - Estado: implementado; por confirmar com o utilizador o tratamento dos avisos de versões.
 - [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
 - [ ] **6.3** Build release assinada e instalação nos dois telemóveis

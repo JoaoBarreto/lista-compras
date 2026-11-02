@@ -58,13 +58,7 @@ fun SwipeableRow(
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onDelete(item.id)
-            // The row leaves the list through the database; never keep it in a dismissed state.
-            false
-        },
-    )
+    val dismissState = rememberSwipeToDismissBoxState()
     val deleteLabel = stringResource(R.string.shopping_delete)
     SwipeToDismissBox(
         // Swipes are taken by screen readers, so deleting also has to be a custom action.
@@ -73,6 +67,8 @@ fun SwipeableRow(
         },
         state = dismissState,
         enableDismissFromStartToEnd = false,
+        // The row leaves the list through the database, so the dismissed state is never kept.
+        onDismiss = { value -> if (value == SwipeToDismissBoxValue.EndToStart) onDelete(item.id) },
         backgroundContent = {
             Box(
                 contentAlignment = Alignment.CenterEnd,

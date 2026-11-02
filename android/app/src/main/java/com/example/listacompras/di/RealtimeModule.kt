@@ -49,7 +49,7 @@ object RealtimeModule {
     ): RealtimeEventApplier = RealtimeEventApplier(
         itemDao, pendingOpDao, activeList, transactions, lock, PocketBaseApiFactory.json,
         // Only the action is logged, never record contents.
-        log = { Log.d(TAG, it) },
+        log = { if (BuildConfig.DEBUG) Log.d(TAG, it) },
     )
 
     @Provides
@@ -94,6 +94,6 @@ object RealtimeModule {
         pull = reconciler,
         scheduler = scheduler,
         json = PocketBaseApiFactory.json,
-        log = { Log.d(TAG, it) },
+        log = { if (BuildConfig.DEBUG) Log.d(TAG, it) },
     )
 }
