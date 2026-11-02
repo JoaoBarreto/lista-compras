@@ -10,7 +10,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.listacompras.R
 import com.example.listacompras.domain.model.SyncStatus
@@ -50,7 +53,11 @@ fun SyncBanner(status: SyncStatus, onErrorClick: () -> Unit, modifier: Modifier 
 
 @Composable
 private fun Banner(text: String, modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = modifier.fillMaxWidth()) {
+    // Polite live region: screen readers announce the banner when it appears.
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+    ) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,

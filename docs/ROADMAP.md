@@ -72,6 +72,11 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Substituir os restos de diagnóstico da 4.3/4.4: o coletor `SyncStatus` temporário no `MainActivity` e o log dos valores brutos no `RealtimeModule` (`BuildConfig.DEBUG`) pelo indicador visível; chamar `SyncStatusProvider.acknowledgeErrors()` ao tocar no erro.
   - Verificado no telemóvel em 2026-11-02.
 - [ ] **5.4** Estados vazios, modo escuro, acessibilidade básica (content descriptions, alvos de toque ≥ 48dp)
+  - ✔ Lista vazia e "tudo comprado" mostram uma mensagem
+  - ✔ Modo escuro legível (login, lista, faixas, fundo do deslizar) e sem flash branco ao arrancar
+  - ✔ Com TalkBack, cada item lê nome, quantidade e estado, marca-se com duplo toque e tem a ação "Apagar"
+  - ✔ Com o tamanho de letra máximo nada fica cortado; alvos de toque ≥ 48dp
+  - Estado: implementado (mensagens vazias, `values-night/themes.xml`, ação personalizada "Apagar", cabeçalhos e faixa anunciados por leitores de ecrã, pré-visualizações). Por verificar no telemóvel.
 
 ## Fase 6 · Polimento e entrega
 - [ ] **6.1** Revisão de erros e logs (sem dados sensíveis), lint limpo
