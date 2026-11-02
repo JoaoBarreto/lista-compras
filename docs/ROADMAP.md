@@ -70,6 +70,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 - [ ] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
   - ✔ Visível e compreensível nos quatro estados
   - Substituir os restos de diagnóstico da 4.3/4.4: o coletor `SyncStatus` temporário no `MainActivity` e o log dos valores brutos no `RealtimeModule` (`BuildConfig.DEBUG`) pelo indicador visível; chamar `SyncStatusProvider.acknowledgeErrors()` ao tocar no erro.
+  - Estado: implementado (`SyncStatusLabel` sob o título; faixa para Offline e Erro; toque na faixa de erro chama `acknowledgeErrors()`); restos de diagnóstico removidos. Por verificar no telemóvel nos quatro estados.
 - [ ] **5.4** Estados vazios, modo escuro, acessibilidade básica (content descriptions, alvos de toque ≥ 48dp)
 
 ## Fase 6 · Polimento e entrega

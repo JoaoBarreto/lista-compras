@@ -19,4 +19,11 @@
     <string name="shopping_add_button">Adicionar</string>
     <string name="shopping_delete">Apagar</string>
     <string name="shopping_button_logout">Terminar sessão</string>
+
+    <string name="sync_status_synced">Sincronizado</string>
+    <string name="sync_status_syncing">A sincronizar…</string>
+    <string name="sync_status_offline">Offline</string>
+    <string name="sync_status_error">Com erros</string>
+    <string name="sync_banner_offline">Sem ligação ao servidor. Verifica se o Tailscale está ligado.</string>
+    <string name="sync_banner_error">Algumas alterações não foram aceites pelo servidor. Toca para dispensar.</string>
 </resources>

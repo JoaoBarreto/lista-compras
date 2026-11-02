@@ -18,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ShoppingViewModel @Inject constructor(
     private val itemRepository: ItemRepository,
-    syncStatusProvider: SyncStatusProvider,
+    private val syncStatusProvider: SyncStatusProvider,
 ) : ViewModel() {
 
     // The repository already orders items (creation time, then id); partitioning keeps that order.
@@ -44,6 +44,11 @@ class ShoppingViewModel @Inject constructor(
 
     fun onDelete(id: String) {
         viewModelScope.launch { itemRepository.delete(id) }
+    }
+
+    /** The user has seen the error banner: hide it until new operations get rejected. */
+    fun onErrorAcknowledged() {
+        viewModelScope.launch { syncStatusProvider.acknowledgeErrors() }
     }
 
     fun onClearChecked() {

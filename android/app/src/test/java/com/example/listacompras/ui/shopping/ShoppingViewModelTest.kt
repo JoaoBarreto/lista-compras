@@ -40,7 +40,8 @@ class ShoppingViewModelTest {
 
     private class FakeSyncStatusProvider : SyncStatusProvider {
         override val status = MutableStateFlow(SyncStatus.Synced)
-        override suspend fun acknowledgeErrors() = Unit
+        var acknowledged = 0
+        override suspend fun acknowledgeErrors() { acknowledged++ }
     }
 
     private val repo = FakeItemRepository()
@@ -130,5 +131,14 @@ class ShoppingViewModelTest {
         vm.onClearChecked()
 
         assertEquals(listOf("check:a:true", "delete:b", "clear"), repo.calls)
+    }
+
+    @Test
+    fun `acknowledging the error is forwarded to the status provider`() = runTest {
+        val vm = ShoppingViewModel(repo, sync)
+
+        vm.onErrorAcknowledged()
+
+        assertEquals(1, sync.acknowledged)
     }
 }

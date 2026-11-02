@@ -2,6 +2,7 @@ package com.example.listacompras.ui.shopping
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.listacompras.R
 import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
+import com.example.listacompras.domain.model.SyncStatus
 import com.example.listacompras.ui.theme.ListaComprasTheme
 import java.time.Instant
 
@@ -51,6 +53,7 @@ fun ShoppingRoute(
         onCheckedChange = viewModel::onCheckedChange,
         onDelete = viewModel::onDelete,
         onClearChecked = viewModel::onClearChecked,
+        onErrorAcknowledged = viewModel::onErrorAcknowledged,
         onLogout = onLogout,
         modifier = modifier,
     )
@@ -64,6 +67,7 @@ fun ShoppingScreen(
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onClearChecked: () -> Unit,
+    onErrorAcknowledged: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -80,14 +84,23 @@ fun ShoppingScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.shopping_title)) },
-                actions = {
-                    TextButton(onClick = onLogout) {
-                        Text(stringResource(R.string.shopping_button_logout))
-                    }
-                },
-            )
+            // The banner lives in the top bar so the list is laid out below it, never under it.
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(stringResource(R.string.shopping_title))
+                            SyncStatusLabel(state.syncStatus)
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = onLogout) {
+                            Text(stringResource(R.string.shopping_button_logout))
+                        }
+                    },
+                )
+                SyncBanner(state.syncStatus, onErrorClick = onErrorAcknowledged)
+            }
         },
         bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }) },
     ) { innerPadding ->
@@ -194,17 +207,36 @@ private fun previewItem(id: String, name: String, checked: Boolean, quantity: St
     addedBy = "u", checkedBy = null, updatedAt = Instant.EPOCH, syncState = SyncState.SYNCED,
 )
 
-@Preview(showBackground = true)
+private fun previewState(status: SyncStatus) = ShoppingUiState(
+    toBuy = listOf(previewItem("a", "Leite", false, "2 L"), previewItem("b", "Pão", false)),
+    bought = listOf(previewItem("c", "Ovos", true)),
+    syncStatus = status,
+    isLoading = false,
+)
+
 @Composable
-private fun ShoppingScreenPreview() {
+private fun PreviewScreen(status: SyncStatus) {
     ListaComprasTheme {
         ShoppingScreen(
-            state = ShoppingUiState(
-                toBuy = listOf(previewItem("a", "Leite", false, "2 L"), previewItem("b", "Pão", false)),
-                bought = listOf(previewItem("c", "Ovos", true)),
-                isLoading = false,
-            ),
-            onAdd = {}, onCheckedChange = { _, _ -> }, onDelete = {}, onClearChecked = {}, onLogout = {},
+            state = previewState(status),
+            onAdd = {}, onCheckedChange = { _, _ -> }, onDelete = {}, onClearChecked = {},
+            onErrorAcknowledged = {}, onLogout = {},
         )
     }
 }
+
+@Preview(showBackground = true, name = "Synced")
+@Composable
+private fun SyncedPreview() = PreviewScreen(SyncStatus.Synced)
+
+@Preview(showBackground = true, name = "Syncing")
+@Composable
+private fun SyncingPreview() = PreviewScreen(SyncStatus.Syncing)
+
+@Preview(showBackground = true, name = "Offline")
+@Composable
+private fun OfflinePreview() = PreviewScreen(SyncStatus.Offline)
+
+@Preview(showBackground = true, name = "Error")
+@Composable
+private fun ErrorPreview() = PreviewScreen(SyncStatus.Error)

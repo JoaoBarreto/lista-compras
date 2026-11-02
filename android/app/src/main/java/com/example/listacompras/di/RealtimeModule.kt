@@ -67,11 +67,7 @@ object RealtimeModule {
         syncMetaDao: SyncMetaDao,
         network: NetworkMonitor,
         reachability: ServerReachability,
-    ): SyncStatusProvider = SyncStatusMonitor(
-        pendingOpDao, syncMetaDao, network, reachability,
-        // Temporary diagnostics (only values, no data) until the status is visible in the UI (5.3).
-        log = { if (BuildConfig.DEBUG) Log.d("SyncStatus", it) },
-    )
+    ): SyncStatusProvider = SyncStatusMonitor(pendingOpDao, syncMetaDao, network, reachability)
 
     @Provides
     @Singleton

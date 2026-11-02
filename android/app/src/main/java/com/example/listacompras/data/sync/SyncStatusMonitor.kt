@@ -35,7 +35,6 @@ class SyncStatusMonitor(
     private val syncMetaDao: SyncMetaDao,
     network: NetworkMonitor,
     reachability: ServerReachability,
-    log: (String) -> Unit = {},
 ) : SyncStatusProvider {
 
     override val status: Flow<SyncStatus> = combine(
@@ -46,8 +45,6 @@ class SyncStatusMonitor(
         syncMetaDao.observe(ACK_KEY),
     ) { online, reach, pending, discarded, acknowledged ->
         val hasDiscards = discarded.toCount() > acknowledged.toCount()
-        // Raw inputs, so a wrong status on a device can be traced to the signal that caused it.
-        log("online=$online reach=$reach pending=$pending discards=$hasDiscards")
         deriveSyncStatus(online, reach, pending, hasDiscards)
     }.distinctUntilChanged()
 
