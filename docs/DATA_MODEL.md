@@ -26,7 +26,9 @@ Duas contas, criadas manualmente. Ajustes:
 
 **Regras (list/view/create/update/delete):** `@request.auth.id != ""`
 
-MVP: existe uma única lista, criada manualmente no dashboard (ou por migração seed). A app usa a primeira lista. Várias listas ficam para a Fase 7.
+MVP: existe uma única lista, criada manualmente no dashboard (ou por migração seed). A app usa a primeira lista.
+
+**Tarefas da casa (Fase 8):** um segundo registo em `lists`, com `name` = "Tarefas", criado à mão no dashboard. **Não há alteração de esquema nem migração**: nem no servidor (não há campo `kind`) nem no Room (os itens já têm `listId`; `sync_meta` guarda os ids). A app identifica as listas pela ordem de criação: a primeira é "Compras", a segunda "Tarefas". Os itens de tarefas reutilizam o esquema de `items` (`name`, `checked`, `added_by`, `checked_by`); `quantity` e `category` ficam vazios e a UI não os mostra. São partilhadas pelas duas contas, com as mesmas regras. Só duas listas, sem criar mais (decisão do utilizador, 2026-11-02).
 
 ## Collection `items`
 

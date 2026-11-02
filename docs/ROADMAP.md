@@ -97,11 +97,24 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 
 - [ ] **6.4** Impedir a adição enquanto ainda não há lista ativa (primeira execução sem servidor alcançado)
   - ✔ Sem lista: botão desativado, o texto escrito mantém-se no campo e aparece "A obter a lista do servidor…"; com lista, tudo como antes
-  - Estado: implementado (`ListRepository.hasActiveList`, `ShoppingUiState.canAdd`); testes passam. Por verificar no telemóvel (instalação limpa em modo avião, antes do primeiro login com rede não é possível; ver nota).
+  - Estado: implementado (`ListRepository.hasActiveList`, `ShoppingUiState.canAdd`); testes passam. Difícil de reproduzir no telemóvel (só ocorre antes de a lista ser obtida na primeira execução); verificado por testes unitários.
+
+## Fase 8 · Tarefas da casa
+Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas, abre em Compras); a tarefa só tem nome e feita/por fazer; partilhada pelas duas contas. Desenho em [DATA_MODEL](DATA_MODEL.md#collection-lists). Sem alterações de esquema (servidor ou Room).
+
+- [ ] **8.1** Criar a lista "Tarefas" no servidor (feito pelo utilizador no dashboard do PocketBase)
+  - ✔ `GET /api/collections/lists/records?sort=created` devolve duas listas, "Compras" primeiro e "Tarefas" depois
+- [ ] **8.2** Cliente: conhecer as duas listas, com a lista selecionada
+  - Guardar os ids das duas listas em `sync_meta`; `add`, `observeItems` e `clearChecked` usam a lista selecionada; o pull completo e o realtime tratam as duas listas; se "Tarefas" ainda não existir no servidor, tentar de novo ao ligar
+  - ✔ Testes unitários: itens de cada lista não se misturam; o pull não apaga os itens da outra lista; eventos de realtime de ambas são aplicados; sem a lista "Tarefas" a app de compras funciona como antes
+- [ ] **8.3** Interface: dois separadores e seleção da lista
+  - ✔ Abre em Compras; trocar de separador mostra a outra lista sem perder o scroll nem o texto do campo de adição; funciona offline
+- [ ] **8.4** Texto e aspeto das tarefas
+  - ✔ "Por fazer / Feitas / Limpar feitas", sem quantidade, estados vazios próprios, tudo em `strings.xml`
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 
-- [ ] Várias listas (supermercado, farmácia…) e seletor de lista
+- [ ] Mais listas além de Compras e Tarefas (supermercado, farmácia…) com criação livre (a versão mínima, só Compras + Tarefas, é a Fase 8)
 - [ ] Categorias com agrupamento visual
 - [ ] Sugestões a partir do histórico (autocomplete)
 - [ ] Notificação opcional quando o outro adiciona/conclui itens
