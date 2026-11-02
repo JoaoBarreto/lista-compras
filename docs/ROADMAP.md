@@ -1,5 +1,14 @@
 # Roadmap
 
+> ## Ponto de situação (fim de 2026-11-02) · retomar aqui
+> - **Release instalada/mais recente:** v8 (`versionCode` 8, 1.3.0), com 9.1, 9.2, 9.2b e 9.3. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`).
+> - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b (login com teclado e texto branco; a cor foi aplicada na v7).
+> - **9.3 implementada, por confirmar:** o utilizador instalou a v8 ("alterações efetuadas") mas ainda não reportou o teste das notificações. Perguntar o resultado primeiro: aviso com a app fechada (cerca de 15 min), itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez. Só então marcar `[x]`.
+> - **Servidor:** o utilizador diz ter criado/ajustado `event_types` e `events` segundo [DATA_MODEL](DATA_MODEL.md) (incluindo `reminder` como *select* `at_time`/`1h`/`1d`, `all_day` sem *Nonempty*, pattern da `color`, regras de API e os 3 tipos iniciais Família `#4CAF50`, Veronica `#E91E63`, João `#2196F3`). **Não verificado**: confirmar na 9.6 com a primeira chamada à API.
+> - **Próxima tarefa: 9.4** (motor de sync para várias collections + migração Room v1→v2). Antes de implementar, consultar o consultor (regra do CLAUDE.md) e ler `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier`, `OutboxCoalescer`, `PendingOpEntity` e `AppDatabase`.
+> - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
+> - Decisões e porquê: [DECISIONS](DECISIONS.md).
+
 Regras: uma tarefa de cada vez, por ordem. Marcar `[x]` só quando **todos** os critérios de aceitação passarem. Para o contexto de cada fase, ver os documentos indicados.
 
 ---
