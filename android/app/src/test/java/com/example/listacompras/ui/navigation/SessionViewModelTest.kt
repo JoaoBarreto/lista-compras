@@ -31,6 +31,7 @@ class SessionViewModelTest {
 
     private class CountingListRepository : ListRepository {
         var calls = 0
+        override val hasActiveList = MutableStateFlow(true)
         override suspend fun ensureActiveList(): Boolean { calls++; return true }
     }
 

@@ -28,4 +28,6 @@
     <string name="sync_banner_error">Algumas alterações não foram aceites pelo servidor. Toca para dispensar.</string>
     <string name="shopping_empty">A lista está vazia. Escreve em baixo o primeiro item.</string>
     <string name="shopping_all_bought">Tudo comprado!</string>
+    <string name="shopping_add_waiting_list">A obter a lista do servidor…</string>
+    <string name="shopping_waiting_list">A obter a lista do servidor. Isto só é preciso na primeira vez e requer ligação ao servidor.</string>
 </resources>

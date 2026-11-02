@@ -95,6 +95,10 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Atualização por cima mantém os dados
   - Estado: implementado (`applicationId` `com.joaobarreto.listacompras`, assinatura por `keystore.properties`, APK em `android/app/build/outputs/apk/release/app-release.apk`, assinatura confirmada com `apksigner`). Testado em 2026-11-02 com um telemóvel: instalação limpa e atualização por cima (v1 → v2, `versionCode` 2) mantiveram o login e os itens já sincronizados. Um item adicionado offline na v1 não apareceu na v2; um force-stop offline mantém o item pendente; a perda limitou-se à instalação por cima (aceite pelo utilizador). Falta o segundo telemóvel.
 
+- [ ] **6.4** Impedir a adição enquanto ainda não há lista ativa (primeira execução sem servidor alcançado)
+  - ✔ Sem lista: botão desativado, o texto escrito mantém-se no campo e aparece "A obter a lista do servidor…"; com lista, tudo como antes
+  - Estado: implementado (`ListRepository.hasActiveList`, `ShoppingUiState.canAdd`); testes passam. Por verificar no telemóvel (instalação limpa em modo avião, antes do primeiro login com rede não é possível; ver nota).
+
 ## Fase 7 · Ideias futuras (fora do MVP)
 
 - [ ] Várias listas (supermercado, farmácia…) e seletor de lista

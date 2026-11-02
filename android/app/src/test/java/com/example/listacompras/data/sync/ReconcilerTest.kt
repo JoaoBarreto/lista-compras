@@ -15,6 +15,7 @@ import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.data.sync.FakePocketBaseApi.Failure
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.repository.ListRepository
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -39,6 +40,7 @@ class ReconcilerTest {
         override suspend fun <T> run(block: suspend () -> T): T = block()
     }
     private val lists = object : ListRepository {
+        override val hasActiveList = activeList.id.map { !it.isNullOrEmpty() }
         override suspend fun ensureActiveList(): Boolean {
             if (listAvailable) activeList.id.value = "list1"
             return listAvailable

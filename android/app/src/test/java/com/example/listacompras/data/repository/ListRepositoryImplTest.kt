@@ -5,6 +5,7 @@ import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.remote.TokenProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -42,6 +43,13 @@ class ListRepositoryImplTest {
         """{"page":1,"perPage":1,"totalPages":1,"totalItems":${ids.size},"items":[""" +
             ids.joinToString(",") { """{"id":"$it","name":"Compras"}""" } + "]}",
     ).build()
+
+    @Test
+    fun hasActiveListFollowsTheStoredId() = runBlocking {
+        assertFalse(repository.hasActiveList.first())
+        activeList.id.value = "list1"
+        assertTrue(repository.hasActiveList.first())
+    }
 
     @Test
     fun fetchesTheFirstListAndStoresItsId() = runBlocking {

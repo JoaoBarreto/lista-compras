@@ -32,10 +32,11 @@ import com.example.listacompras.R
 fun AddItemBar(
     onAdd: (String) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     val submit = {
-        if (text.isNotBlank()) {
+        if (enabled && text.isNotBlank()) {
             onAdd(text)
             text = ""
         }
@@ -55,6 +56,9 @@ fun AddItemBar(
                 onValueChange = { text = it },
                 label = { Text(stringResource(R.string.shopping_add_label)) },
                 singleLine = true,
+                supportingText = if (enabled) null else {
+                    { Text(stringResource(R.string.shopping_add_waiting_list)) }
+                },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -62,7 +66,7 @@ fun AddItemBar(
                 keyboardActions = KeyboardActions(onDone = { submit() }),
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = { submit() }, modifier = Modifier.padding(start = 8.dp)) {
+            Button(onClick = { submit() }, enabled = enabled, modifier = Modifier.padding(start = 8.dp)) {
                 Text(stringResource(R.string.shopping_add_button))
             }
         }

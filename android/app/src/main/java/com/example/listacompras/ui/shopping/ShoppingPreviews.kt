@@ -32,7 +32,7 @@ private fun state(
     status: SyncStatus = SyncStatus.Synced,
     toBuy: List<ShoppingItem> = com.example.listacompras.ui.shopping.toBuy,
     bought: List<ShoppingItem> = com.example.listacompras.ui.shopping.bought,
-) = ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, isLoading = false)
+) = ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, canAdd = true, isLoading = false)
 
 @Preview(showBackground = true, name = "Synced")
 @Composable
@@ -65,3 +65,9 @@ private fun DarkPreview() = PreviewScreen(state(SyncStatus.Offline))
 @Preview(showBackground = true, name = "Font x2, error", fontScale = 2f)
 @Composable
 private fun LargeFontPreview() = PreviewScreen(state(SyncStatus.Error))
+
+@Preview(showBackground = true, name = "No list yet")
+@Composable
+private fun NoListPreview() = PreviewScreen(
+    ShoppingUiState(syncStatus = SyncStatus.Offline, canAdd = false, isLoading = false),
+)

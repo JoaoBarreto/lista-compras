@@ -6,6 +6,7 @@ import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.model.SyncStatus
 import com.example.listacompras.domain.repository.ItemRepository
+import com.example.listacompras.domain.repository.ListRepository
 import com.example.listacompras.domain.repository.SyncStatusProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,7 +45,14 @@ class ShoppingViewModelTest {
         override suspend fun acknowledgeErrors() { acknowledged++ }
     }
 
+    private class FakeListRepository : ListRepository {
+        val has = MutableStateFlow(true)
+        override val hasActiveList: Flow<Boolean> = has
+        override suspend fun ensureActiveList() = has.value
+    }
+
     private val repo = FakeItemRepository()
+    private val lists = FakeListRepository()
     private val sync = FakeSyncStatusProvider()
 
     @Before
@@ -61,7 +69,7 @@ class ShoppingViewModelTest {
     @Test
     fun `starts loading then splits items keeping repository order`() = runTest {
         repo.items.value = listOf(item("a"), item("b", checked = true), item("c"), item("d", checked = true))
-        val vm = ShoppingViewModel(repo, sync)
+        val vm = ShoppingViewModel(repo, lists, sync)
 
         vm.uiState.test {
             val state = expectMostRecentItem()
@@ -78,6 +86,7 @@ class ShoppingViewModelTest {
             object : ItemRepository by repo {
                 override fun observeItems(): Flow<List<ShoppingItem>> = source
             },
+            lists,
             sync,
         )
 
@@ -94,7 +103,7 @@ class ShoppingViewModelTest {
 
     @Test
     fun `reacts to item and sync status changes`() = runTest {
-        val vm = ShoppingViewModel(repo, sync)
+        val vm = ShoppingViewModel(repo, lists, sync)
 
         vm.uiState.test {
             assertEquals(emptyList<ShoppingItem>(), expectMostRecentItem().toBuy)
@@ -114,7 +123,7 @@ class ShoppingViewModelTest {
 
     @Test
     fun `blank names are ignored and others are trimmed`() = runTest {
-        val vm = ShoppingViewModel(repo, sync)
+        val vm = ShoppingViewModel(repo, lists, sync)
 
         vm.onAdd("   ")
         vm.onAdd("  leite ")
@@ -124,7 +133,7 @@ class ShoppingViewModelTest {
 
     @Test
     fun `events call the repository`() = runTest {
-        val vm = ShoppingViewModel(repo, sync)
+        val vm = ShoppingViewModel(repo, lists, sync)
 
         vm.onCheckedChange("a", true)
         vm.onDelete("b")
@@ -135,10 +144,29 @@ class ShoppingViewModelTest {
 
     @Test
     fun `acknowledging the error is forwarded to the status provider`() = runTest {
-        val vm = ShoppingViewModel(repo, sync)
+        val vm = ShoppingViewModel(repo, lists, sync)
 
         vm.onErrorAcknowledged()
 
         assertEquals(1, sync.acknowledged)
+    }
+
+    @Test
+    fun `canAdd follows the active list and adding is ignored without one`() = runTest {
+        lists.has.value = false
+        val vm = ShoppingViewModel(repo, lists, sync)
+
+        vm.uiState.test {
+            assertEquals(false, expectMostRecentItem().canAdd)
+
+            vm.onAdd("leite")
+            assertEquals(emptyList<String>(), repo.calls)
+
+            lists.has.value = true
+            assertEquals(true, awaitItem().canAdd)
+
+            vm.onAdd("leite")
+            assertEquals(listOf("add:leite"), repo.calls)
+        }
     }
 }

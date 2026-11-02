@@ -5,6 +5,9 @@ import com.example.listacompras.domain.repository.ListRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
@@ -14,6 +17,9 @@ class ListRepositoryImpl(
     private val activeList: ActiveListProvider,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ListRepository {
+
+    override val hasActiveList: Flow<Boolean> =
+        activeList.observeListId().map { !it.isNullOrEmpty() }.distinctUntilChanged()
 
     override suspend fun ensureActiveList(): Boolean = withContext(ioDispatcher) {
         if (!activeList.listId().isNullOrEmpty()) return@withContext true

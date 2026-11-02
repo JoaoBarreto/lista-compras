@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.listacompras.domain.model.SyncStatus
 import com.example.listacompras.domain.repository.ItemRepository
+import com.example.listacompras.domain.repository.ListRepository
 import com.example.listacompras.domain.repository.SyncStatusProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -18,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ShoppingViewModel @Inject constructor(
     private val itemRepository: ItemRepository,
+    private val listRepository: ListRepository,
     private val syncStatusProvider: SyncStatusProvider,
 ) : ViewModel() {
 
@@ -26,16 +29,19 @@ class ShoppingViewModel @Inject constructor(
         itemRepository.observeItems(),
         // Items must not wait for the first status (it depends on network callbacks).
         syncStatusProvider.status.onStart { emit(SyncStatus.Syncing) },
-    ) { items, status ->
+        listRepository.hasActiveList,
+    ) { items, status, hasList ->
         val (bought, toBuy) = items.partition { it.checked }
-        ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, isLoading = false)
+        ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, canAdd = hasList, isLoading = false)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ShoppingUiState())
 
-    /** Blank names are ignored. A refused add (no list or user yet) is also ignored for now. */
+    /** Blank names are ignored, and so is anything while there is no list yet (the UI disables adding then). */
     fun onAdd(name: String) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { itemRepository.add(trimmed) }
+        viewModelScope.launch {
+            if (listRepository.hasActiveList.first()) itemRepository.add(trimmed)
+        }
     }
 
     fun onCheckedChange(id: String, checked: Boolean) {

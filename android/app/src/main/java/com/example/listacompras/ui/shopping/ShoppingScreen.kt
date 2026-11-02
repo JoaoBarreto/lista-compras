@@ -85,7 +85,7 @@ fun ShoppingScreen(
                 SyncBanner(state.syncStatus, onErrorClick = onErrorAcknowledged)
             }
         },
-        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }) },
+        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }, enabled = state.canAdd) },
     ) { innerPadding ->
         // Nothing until the local database has answered, so the empty message does not flash.
         if (state.isLoading) return@Scaffold
@@ -95,7 +95,10 @@ fun ShoppingScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             if (state.toBuy.isEmpty() && state.bought.isEmpty()) {
-                item(key = "empty") { EmptyMessage(stringResource(R.string.shopping_empty), Modifier.fillParentMaxSize()) }
+                item(key = "empty") { EmptyMessage(
+                        stringResource(if (state.canAdd) R.string.shopping_empty else R.string.shopping_waiting_list),
+                        Modifier.fillParentMaxSize(),
+                    ) }
             }
             if (state.toBuy.isEmpty() && state.bought.isNotEmpty()) {
                 item(key = "all-bought") { EmptyMessage(stringResource(R.string.shopping_all_bought)) }
