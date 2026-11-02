@@ -2,6 +2,7 @@
     <string name="app_name">Life Manager</string>
 
     <string name="login_title">Iniciar sessão</string>
+    <string name="login_tagline">A vida a dois, organizada.</string>
     <string name="login_email_label">Email</string>
     <string name="login_password_label">Palavra-passe</string>
     <string name="login_password_show">Mostrar</string>
@@ -17,7 +18,8 @@
     <string name="shopping_section_bought">Comprados</string>
     <string name="shopping_clear_bought">Limpar comprados</string>
     <string name="shopping_add_label">Adicionar item</string>
-    <string name="shopping_quantity_label">Quantidade</string>
+    <string name="shopping_quantity_label">Qtd.</string>
+    <string name="shopping_quantity_description">Quantidade (opcional)</string>
     <string name="shopping_add_button">Adicionar</string>
     <string name="shopping_delete">Apagar</string>
     <string name="shopping_button_logout">Terminar sessão</string>

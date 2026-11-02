@@ -1,6 +1,18 @@
 package com.example.listacompras.ui.login
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -61,7 +73,16 @@ fun LoginScreen(
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    // Near-black at the bottom (cheap on OLED) with a warm glow from the icon's orange at the top.
+    val dark = isSystemInDarkTheme()
+    val backdrop = Brush.verticalGradient(
+        if (dark) listOf(Color(0xFF3A1A0A), Color(0xFF140B06), Color(0xFF0B0907))
+        else listOf(Color(0xFFFFD9BF), Color(0xFFFFEFE3), Color(0xFFFFF9F4)),
+    )
+    Scaffold(
+        modifier = modifier.fillMaxSize().background(backdrop),
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -71,11 +92,36 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(112.dp).clip(CircleShape).background(Color(0xFFFA5803)),
+            ) {
+                // Decorative: the name below says the same. Oversized and cropped to fill the circle.
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.requiredSize(168.dp),
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displaySmall,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(R.string.login_tagline),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(32.dp))
             Text(
                 text = stringResource(R.string.login_title),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleMedium,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = state.email,
                 onValueChange = onEmailChange,
