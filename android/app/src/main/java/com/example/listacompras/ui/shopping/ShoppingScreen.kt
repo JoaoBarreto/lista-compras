@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -18,7 +20,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -61,6 +67,16 @@ fun ShoppingScreen(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+    // Only items added from this screen scroll into view; ones arriving from the other phone must not.
+    var scrollToNewItem by remember { mutableStateOf(false) }
+    LaunchedEffect(state.toBuy.size) {
+        if (scrollToNewItem && state.toBuy.isNotEmpty()) {
+            scrollToNewItem = false
+            listState.revealItem(index = state.toBuy.lastIndex + 1) // +1: the section header
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -73,11 +89,12 @@ fun ShoppingScreen(
                 },
             )
         },
-        bottomBar = { AddItemBar(onAdd = onAdd) },
+        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }) },
     ) { innerPadding ->
         // Nothing until the local database has answered, so no empty list flashes (empty states: 5.4).
         if (state.isLoading) return@Scaffold
         LazyColumn(
+            state = listState,
             contentPadding = innerPadding,
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -101,6 +118,16 @@ fun ShoppingScreen(
             }
         }
     }
+}
+
+/** Brings the item at [index] into view, as close to the bottom edge as possible; no-op if visible. */
+private suspend fun LazyListState.revealItem(index: Int) {
+    val info = layoutInfo
+    val visible = info.visibleItemsInfo
+    if (visible.any { it.index == index && it.offset + it.size <= info.viewportEndOffset - info.afterContentPadding }) return
+    val itemSize = visible.lastOrNull()?.size ?: 0
+    val viewport = info.viewportEndOffset - info.viewportStartOffset - info.beforeContentPadding - info.afterContentPadding
+    animateScrollToItem(index, scrollOffset = -(viewport - itemSize).coerceAtLeast(0))
 }
 
 @Composable
