@@ -79,12 +79,15 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Verificado no telemóvel em 2026-11-02.
 
 ## Fase 6 · Polimento e entrega
-- [ ] **6.1** Revisão de erros e logs (sem dados sensíveis), lint limpo
+- [x] **6.1** Revisão de erros e logs (sem dados sensíveis), lint limpo
   - ✔ Nenhum log contém tokens, palavras-passe, nomes/quantidades de itens, nomes de utilizadores, emails nem o URL do servidor
   - ✔ Logs de diagnóstico (`d`) só em builds de debug
-  - ✔ Sem avisos do compilador; `lintDebug` só com avisos de atualização de versões (geridas à mão)
+  - ✔ Sem avisos do compilador; `lintDebug` só com avisos de atualização de versões (tratados à parte, ver 6.1b)
   - ✔ Sem textos visíveis hardcoded
-  - Estado: implementado; por confirmar com o utilizador o tratamento dos avisos de versões.
+  - Verificado no computador em 2026-11-02: lint passou de 16 para 8 avisos (todos de versões); sem avisos do compilador. O deslizar para apagar passou para a API `onDismiss`; por reconfirmar no telemóvel.
+- [ ] **6.1b** Atualizar dependências desatualizadas (decisão do utilizador, 2026-11-02)
+  - Confirmar a última versão estável de cada uma (core-ktx, activity-compose, Compose BOM, navigation-compose, Kotlin, kotlinx-serialization-json, Gradle) antes de fixar
+  - ✔ `testDebugUnitTest`, `assembleDebug` e `lintDebug` passam; app testada no telemóvel
 - [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
 - [ ] **6.3** Build release assinada e instalação nos dois telemóveis
