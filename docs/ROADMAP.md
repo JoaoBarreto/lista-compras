@@ -121,11 +121,11 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.1** Quantidade opcional nas Compras
   - Segundo campo ao lado do nome, só em Compras; vazio = não se grava nem mostra quantidade (a linha mostra só o nome). Máx. 30 caracteres. Editar a quantidade de um item existente fica fora do âmbito.
   - ✔ Testes: `onAdd` com quantidade vazia/só espaços → `quantity = null`; com valor → guardada com trim; a lista mostra a quantidade só quando existe; Tarefas não mostram o campo; funciona offline
-  - Estado: implementado em 2026-11-02 (`AddItemBar` com campo "Quantidade" só nas Compras; `ShoppingViewModel.onAdd(name, quantity)`); 148 testes, `assembleDebug` e `lintDebug` passam. Falta verificar no telemóvel (layout do campo, offline) antes de marcar `[x]`.
+  - Estado: implementado em 2026-11-02 (`AddItemBar` com campo "Quantidade" só nas Compras; `ShoppingViewModel.onAdd(name, quantity)`); 148 testes, `assembleDebug` e `lintDebug` passam. O foco volta ao nome depois de adicionar. Falta verificar no telemóvel (layout do campo, letra grande, offline) antes de marcar `[x]`.
 - [ ] **9.2** Nome "Life Manager" e documentação
   - Só o nome visível (`app_name`) e README/docs. **Não mudar** `applicationId`, pacote, nome da base Room nem keystore (senão seria outra app e os dois telemóveis perdiam os dados).
   - ✔ O ícone da app mostra "Life Manager"; docs coerentes com a nova visão; `DECISIONS.md` criado
-  - Estado: docs feitos em 2026-11-02; falta alterar `app_name` no código e verificar no telemóvel.
+  - Estado: docs feitos e `app_name` = "Life Manager" em 2026-11-02 (release v4, `versionCode` 4 / 1.2.0, com a 9.1). Falta verificar no telemóvel.
 - [ ] **9.3** Base das notificações e aviso de itens novos nas Compras
   - Permissão `POST_NOTIFICATIONS` (Android 13+, pedida em contexto), canais de notificação, `NotificationChecker` periódico (WorkManager, ~15 min), marcador `lastNotified*` em `sync_meta`, interruptor nas definições
   - ✔ Testes unitários: só itens de outro utilizador; vários itens → uma notificação agrupada; nunca duas vezes o mesmo item; sem permissão não falha

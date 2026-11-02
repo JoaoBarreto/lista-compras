@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ListaCompras</string>
+    <string name="app_name">Life Manager</string>
 
     <string name="login_title">Iniciar sessão</string>
     <string name="login_email_label">Email</string>

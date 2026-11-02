@@ -17,6 +17,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,11 +49,14 @@ fun AddItemBar(
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     var quantity by rememberSaveable { mutableStateOf("") }
+    val nameFocus = remember { FocusRequester() }
     val submit = {
         if (enabled && text.isNotBlank()) {
             onAdd(text, if (quantityLabel == null) "" else quantity)
             text = ""
             quantity = ""
+            // Back to the name, so several items can be typed in a row even after submitting from the quantity.
+            nameFocus.requestFocus()
         }
     }
 
@@ -76,7 +82,7 @@ fun AddItemBar(
                         imeAction = ImeAction.Done,
                     ),
                     keyboardActions = KeyboardActions(onDone = { submit() }),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(nameFocus),
                 )
                 if (quantityLabel != null) {
                     OutlinedTextField(
