@@ -33,7 +33,7 @@ ui  ──►  domain  ◄──  data
 ## Fluxo de dados
 
 ### Leitura
-`ItemRepository.observeItems()` devolve `Flow<List<ShoppingItem>>` vindo do Room. O ViewModel transforma em `UiState` (separando por comprar / comprados). `ShoppingViewModel` (`ui/shopping`) combina `observeItems()` com `SyncStatusProvider.status` num único `StateFlow<ShoppingUiState>` (`toBuy`, `bought`, `syncStatus`, `isLoading`, este último `true` até o Room emitir pela primeira vez). Mantém a ordem do repositório (`createdAt, id`); um `add` recusado (sem lista/utilizador) é ignorado por agora.
+`ItemRepository.observeItems(kind)` devolve `Flow<List<ShoppingItem>>` vindo do Room. O ViewModel transforma em `UiState` (separando por comprar / comprados). `ShoppingViewModel` (`ui/shopping`) combina `observeItems(kind)`, `SyncStatusProvider.status` e `ListRepository.hasList(kind)` num único `StateFlow<ShoppingUiState>` (`toBuy`, `bought`, `syncStatus`, `canAdd`, `isLoading`; este último `true` até o Room emitir pela primeira vez). Mantém a ordem do repositório (`createdAt, id`); sem lista (`canAdd = false`) a UI desativa a adição e mantém o texto escrito, e `onAdd` ignora o pedido. Até à 8.3 o ecrã usa só `ListKind.SHOPPING`.
 
 ### Escrita (ex.: marcar como comprado)
 1. ViewModel chama `repository.setChecked(id, true)`.
@@ -72,7 +72,7 @@ ui  ──►  domain  ◄──  data
    - Os ids pendentes são lidos **dentro** da transação de aplicação, não antes do pedido, para proteger escritas feitas durante o fetch.
    - `OutboxProcessor` e `Reconciler` partilham um `SyncLock` (Mutex singleton, não reentrante). Sem ele, o pull podia ler um snapshot sem o item X (o `CREATE` ainda pendente), o processor enviar e apagar a operação, e o pull aplicar: X não está pendente nem no snapshot e seria apagado localmente.
    - O `SyncWorker` corre `process()` e, só se der `Done`, `pull()` (um a seguir ao outro, nunca aninhados). Cobre "ao abrir a app" (o `SessionViewModel` pede sincronização com sessão) e "após esvaziar o outbox". "Ao reconectar" é a 4.3.
-   - Erros: mesma classificação do envio (`classifyHttp`): rede/5xx/408/429 e 401 com token → `Retry`; 401 sem token → `AuthLost`. Um 4xx no pull não se descarta (não há nada a descartar): fica `Retry`. Sem lista ativa, tenta `ensureActiveList()` e, se falhar, `Retry`.
+   - Erros: mesma classificação do envio (`classifyHttp`): rede/5xx/408/429 e 401 com token → `Retry`; 401 sem token → `AuthLost`. Um 4xx no pull não se descarta (não há nada a descartar): fica `Retry`. Se faltar algum id de lista, tenta `ensureLists()`; só `Retry` se nem a lista de Compras for conhecida (uma Tarefas em falta não é erro).
    - Em sucesso grava `sync_meta.lastFullSyncAt` (epoch millis), que a 4.4 usa.
 4. **Conflitos:** *last-write-wins* ao nível do campo enviado. É aceitável para dois utilizadores e operações idempotentes (marcar/desmarcar).
 5. **Envio** (`OutboxProcessor` em `data/sync`, chamado pelo `SyncWorker`):

@@ -26,7 +26,7 @@ Com token **expirado** o servidor deve responder 401 (a documentação do Pocket
 ## Listas
 
 ### Obter a lista ativa (MVP)
-`GET /api/collections/lists/records?sort=created&perPage=1` → `items[0].id` (a lista mais antiga). Chamado uma vez após o login; o id fica em `sync_meta`.
+`GET /api/collections/lists/records?sort=created&perPage=20` → a mais antiga é Compras e a seguinte é Tarefas (ver DATA_MODEL). Chamado após o login e em cada pull enquanto faltar algum id; os ids ficam em `sync_meta`.
 
 ## Itens
 

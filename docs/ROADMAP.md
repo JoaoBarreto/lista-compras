@@ -104,10 +104,10 @@ Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas,
 
 - [x] **8.1** Criar a lista "Tarefas" no servidor (feito pelo utilizador no dashboard do PocketBase)
   - ✔ `GET /api/collections/lists/records?sort=created` devolve duas listas, "Compras" primeiro e "Tarefas" depois (confirmado pelo utilizador no dashboard em 2026-11-02; a verificação ponta a ponta fica para a 8.3)
-- [ ] **8.2** Cliente: conhecer as duas listas, com a lista selecionada
+- [x] **8.2** Cliente: conhecer as duas listas, com a lista selecionada
   - Guardar os ids das duas listas em `sync_meta`; `add`, `observeItems` e `clearChecked` usam a lista selecionada; o pull completo e o realtime tratam as duas listas; se "Tarefas" ainda não existir no servidor, tentar de novo ao ligar
   - ✔ Testes unitários: itens de cada lista não se misturam; o pull não apaga os itens da outra lista; eventos de realtime de ambas são aplicados; sem a lista "Tarefas" a app de compras funciona como antes
-  - Estado: implementado (`ListKind`, `ActiveListProvider` por tipo, `ensureLists`, pull e realtime sobre todas as listas conhecidas, `ShoppingViewModel` usa `SHOPPING`); 146 testes. Por verificar no telemóvel: nada deve mudar na lista de Compras.
+  - Verificado por testes unitários em 2026-11-02 (146 testes). A confirmação no telemóvel de que as Compras não mudam faz-se na 8.3, com uma release `versionCode` 3 instalada por cima da v2.
 - [ ] **8.3** Interface: dois separadores e seleção da lista
   - ✔ Abre em Compras; trocar de separador mostra a outra lista sem perder o scroll nem o texto do campo de adição; funciona offline
 - [ ] **8.4** Texto e aspeto das tarefas
