@@ -29,7 +29,7 @@ fun ShoppingScreen(
     state: ShoppingUiState,
     texts: ShoppingTexts,
     tabs: @Composable () -> Unit,
-    onAdd: (String) -> Unit,
+    onAdd: (String, String) -> Unit,
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onClearChecked: () -> Unit,
@@ -69,7 +69,14 @@ fun ShoppingScreen(
                 SyncBanner(state.syncStatus, onErrorClick = onErrorAcknowledged)
             }
         },
-        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }, label = texts.addLabel, enabled = state.canAdd) },
+        bottomBar = {
+            AddItemBar(
+                onAdd = { name, quantity -> scrollToNewItem = true; onAdd(name, quantity) },
+                label = texts.addLabel,
+                enabled = state.canAdd,
+                quantityLabel = texts.quantityLabel,
+            )
+        },
     ) { innerPadding ->
         // Nothing until the local database has answered, so the empty message does not flash.
         if (state.isLoading) return@Scaffold

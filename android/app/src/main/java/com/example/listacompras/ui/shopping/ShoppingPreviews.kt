@@ -25,7 +25,7 @@ private fun PreviewScreen(state: ShoppingUiState) {
             state = state,
             texts = shoppingTexts(ListKind.SHOPPING),
             tabs = {},
-            onAdd = {}, onCheckedChange = { _, _ -> }, onDelete = {}, onClearChecked = {},
+            onAdd = { _, _ -> }, onCheckedChange = { _, _ -> }, onDelete = {}, onClearChecked = {},
             onErrorAcknowledged = {}, onLogout = {},
         )
     }

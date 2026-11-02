@@ -121,6 +121,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.1** Quantidade opcional nas Compras
   - Segundo campo ao lado do nome, só em Compras; vazio = não se grava nem mostra quantidade (a linha mostra só o nome). Máx. 30 caracteres. Editar a quantidade de um item existente fica fora do âmbito.
   - ✔ Testes: `onAdd` com quantidade vazia/só espaços → `quantity = null`; com valor → guardada com trim; a lista mostra a quantidade só quando existe; Tarefas não mostram o campo; funciona offline
+  - Estado: implementado em 2026-11-02 (`AddItemBar` com campo "Quantidade" só nas Compras; `ShoppingViewModel.onAdd(name, quantity)`); 148 testes, `assembleDebug` e `lintDebug` passam. Falta verificar no telemóvel (layout do campo, offline) antes de marcar `[x]`.
 - [ ] **9.2** Nome "Life Manager" e documentação
   - Só o nome visível (`app_name`) e README/docs. **Não mudar** `applicationId`, pacote, nome da base Room nem keystore (senão seria outra app e os dois telemóveis perdiam os dados).
   - ✔ O ícone da app mostra "Life Manager"; docs coerentes com a nova visão; `DECISIONS.md` criado

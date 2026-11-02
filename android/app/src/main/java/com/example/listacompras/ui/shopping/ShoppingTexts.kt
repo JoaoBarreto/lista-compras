@@ -14,6 +14,8 @@ data class ShoppingTexts(
     val empty: String,
     val allDone: String,
     val waitingList: String,
+    /** Label of the optional quantity field; null when the list has no quantities (Tarefas). */
+    val quantityLabel: String?,
 )
 
 @Composable
@@ -29,5 +31,7 @@ fun shoppingTexts(kind: ListKind): ShoppingTexts {
         )
     }
     val s = ids.map { stringResource(it) }
-    return ShoppingTexts(s[0], s[1], s[2], s[3], s[4], s[5], stringResource(R.string.shopping_waiting_list))
+    return ShoppingTexts(s[0], s[1], s[2], s[3], s[4], s[5], stringResource(R.string.shopping_waiting_list),
+        if (kind == ListKind.SHOPPING) stringResource(R.string.shopping_quantity_label) else null,
+    )
 }

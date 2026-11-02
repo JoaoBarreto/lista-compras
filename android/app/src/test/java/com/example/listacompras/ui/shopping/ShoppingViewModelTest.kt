@@ -36,7 +36,7 @@ class ShoppingViewModelTest {
             return items
         }
         override suspend fun add(kind: ListKind, name: String, quantity: String?, category: Category?): Boolean {
-            calls += "add:$kind:$name"
+            calls += "add:$kind:$name" + (quantity?.let { ":$it" } ?: "")
             return true
         }
         override suspend fun setChecked(id: String, checked: Boolean) { calls += "check:$id:$checked" }
@@ -139,6 +139,25 @@ class ShoppingViewModelTest {
         vm.onAdd("  leite ")
 
         assertEquals(listOf("add:SHOPPING:leite"), repo.calls)
+    }
+
+    @Test
+    fun `quantity is optional, trimmed and capped on shopping, and never stored on tasks`() = runTest {
+        val shopping = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
+        shopping.onAdd("leite")
+        shopping.onAdd("ovos", "")
+        shopping.onAdd("pão", "   ")
+        shopping.onAdd("arroz", " 2 kg ")
+        shopping.onAdd("água", "x".repeat(40))
+        ShoppingViewModel(ListKind.TASKS, repo, lists, sync).onAdd("Limpar", "3")
+
+        assertEquals(
+            listOf(
+                "add:SHOPPING:leite", "add:SHOPPING:ovos", "add:SHOPPING:pão", "add:SHOPPING:arroz:2 kg",
+                "add:SHOPPING:água:" + "x".repeat(30), "add:TASKS:Limpar",
+            ),
+            repo.calls,
+        )
     }
 
     @Test

@@ -41,11 +41,13 @@ class ShoppingViewModel @AssistedInject constructor(
     }.stateIn(viewModelScope, SharingStarted.Lazily, ShoppingUiState())
 
     /** Blank names are ignored, and so is anything while there is no list yet (the UI disables adding then). */
-    fun onAdd(name: String) {
+    /** [quantity] is optional: blank (or any value on a list without quantities) means none is stored. */
+    fun onAdd(name: String, quantity: String = "") {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
+        val qty = if (kind == ListKind.SHOPPING) quantity.trim().take(MAX_QUANTITY_LENGTH).ifEmpty { null } else null
         viewModelScope.launch {
-            if (listRepository.hasList(kind).first()) itemRepository.add(kind, trimmed)
+            if (listRepository.hasList(kind).first()) itemRepository.add(kind, trimmed, qty)
         }
     }
 
