@@ -85,6 +85,9 @@ fun LoginScreen(
         if (dark) listOf(Color(0xFF3A1A0A), Color(0xFF140B06), Color(0xFF0B0907))
         else listOf(Color(0xFFFFD9BF), Color(0xFFFFEFE3), Color(0xFFFFF9F4)),
     )
+    // Fixed, not themed: the backdrop is fixed too, and white reads best on the dark gradient.
+    val titleColor = if (dark) Color.White else MaterialTheme.colorScheme.onSurface
+    val taglineColor = if (dark) Color(0xFFE6D5C8) else MaterialTheme.colorScheme.onSurfaceVariant
     Scaffold(
         modifier = modifier.fillMaxSize().background(backdrop),
         containerColor = Color.Transparent,
@@ -120,13 +123,14 @@ fun LoginScreen(
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.displaySmall,
+                color = titleColor,
                 textAlign = TextAlign.Center,
             )
             if (!keyboardOpen) {
                 Text(
                     text = stringResource(R.string.login_tagline),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = taglineColor,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -134,6 +138,7 @@ fun LoginScreen(
             Text(
                 text = stringResource(R.string.login_title),
                 style = MaterialTheme.typography.titleMedium,
+                color = titleColor,
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(

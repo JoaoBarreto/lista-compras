@@ -65,7 +65,7 @@ Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os t
 |---|---|---|---|
 | `id` | text (auto, 15 chars) | sim | Pode ser enviado pelo cliente no create |
 | `name` | text (1–30) | sim | Ex.: "Família" |
-| `color` | text | sim | Cor em hexadecimal `#RRGGBB`; a UI ajusta o contraste ao tema escuro |
+| `color` | text | sim | Cor em hexadecimal `#RRGGBB`, com *pattern* `^#[0-9A-Fa-f]{6}$`; a UI ajusta o contraste ao tema escuro |
 | `created` / `updated` | autodate | sim | |
 
 **Regras (list/view/create/update/delete):** `@request.auth.id != ""`. Apagar um tipo em uso: ver `events.type`.
@@ -78,9 +78,9 @@ Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os t
 | `title` | text (1–100) | sim | |
 | `notes` | text (≤ 500) | não | |
 | `starts_at` | date | sim | UTC; a app converte para o fuso do telemóvel |
-| `all_day` | bool | sim (default `false`) | Se verdadeiro, a hora é ignorada |
+| `all_day` | bool | **não** (default `false`) | Se verdadeiro, a hora é ignorada. Não marcar "Nonempty": num bool significa "tem de ser `true`" |
 | `type` | relation → `event_types` (single) | sim | Sem cascade delete: a app impede apagar tipos em uso |
-| `remind_before` | number (minutos) | não | Vazio = sem lembrete; 0 = à hora; 60; 1440 (1 dia) |
+| `reminder` | select (single) | não | `at_time`, `1h`, `1d`. Vazio = sem lembrete. (Um campo *number* não serve: o PocketBase devolve `0` quando está vazio, e `0` seria "à hora".) |
 | `created_by` | relation → `users` (single) | sim | Quem criou (a notificação ignora os próprios eventos) |
 | `created` / `updated` | autodate | sim | |
 

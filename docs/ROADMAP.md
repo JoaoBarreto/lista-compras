@@ -126,7 +126,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Só o nome visível (`app_name`) e README/docs. **Não mudar** `applicationId`, pacote, nome da base Room nem keystore (senão seria outra app e os dois telemóveis perdiam os dados).
   - ✔ O ícone da app mostra "Life Manager"; docs coerentes com a nova visão; `DECISIONS.md` criado
   - Estado: docs feitos e `app_name` = "Life Manager" em 2026-11-02 (release v4, `versionCode` 4 / 1.2.0, com a 9.1). Verificado no telemóvel em 2026-11-02 (v4).
-- [ ] **9.2b** Ecrã de login acolhedor e campo de quantidade mais compacto (pedido do utilizador após testar a v4)
+- [x] **9.2b** Ecrã de login acolhedor e campo de quantidade mais compacto (pedido do utilizador após testar a v4)
   - Login: fundo em gradiente (laranja quente do ícone no topo, quase preto em baixo no modo escuro; creme no claro), ícone circular, nome "Life Manager" e frase "A vida a dois, organizada."; formulário legível nos dois modos
   - Quantidade: legenda curta "Qtd." (descrição para TalkBack "Quantidade (opcional)") e campo com a altura do campo do nome
   - ✔ Verificado no telemóvel (claro, escuro, letra grande, teclado aberto no login)
@@ -149,7 +149,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Agenda por dia/mês com `DatePicker`/`TimePicker` do Material 3 (sem biblioteca de calendário), criar/editar/apagar evento, escolher o tipo, gerir tipos (nome + cor), cada evento com a cor do seu tipo
   - ✔ Eventos coloridos por tipo, com texto do tipo também (a cor nunca é a única pista); modo escuro legível; TalkBack lê título, data e tipo; funciona offline
 - [ ] **9.8** Lembretes de eventos
-  - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (nenhuma / à hora / 1 h / 1 dia). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
+  - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (campo `reminder`: nenhuma / à hora / 1 h / 1 dia). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
   - ✔ Evento criado pelo outro telemóvel é agendado aqui; apagar cancela o alarme; sobrevive a reinício do telemóvel
 - [ ] **9.9** Aviso de evento novo criado pelo outro
   - Reutiliza o `NotificationChecker` da 9.3

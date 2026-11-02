@@ -12,6 +12,7 @@ Registo das decisões de produto e técnicas, para acompanhar as alterações ao
 
 - **Decisão:** avisos de "o outro adicionou…" por uma verificação periódica do WorkManager (~15 min, o mínimo do Android), com notificação local. Sem serviço permanente, sem FCM/UnifiedPush.
 - **Porquê:** o utilizador quer gastar pouca bateria e não ter problemas no futuro (serviços permanentes são mortos pela Samsung; FCM exigia dependências novas, conta Google e trabalho no servidor). O atraso até ~15 min é aceite.
+- **Atraso real:** o WorkManager periódico pode atrasar bastante mais de 15 min com o telemóvel parado (Doze, sobretudo Samsung). A verificação do critério faz-se com o telemóvel em uso normal; não é uma garantia de horário.
 - **Alternativas rejeitadas:** serviço em primeiro plano com SSE (bateria, notificação fixa); FCM/UnifiedPush (dependências, servidor, dados via Google).
 - **Consequências:** só funciona com o Tailscale ligado no telemóvel. Os **lembretes de eventos** são independentes: são alarmes locais, agendados a partir da base de dados local, por isso chegam à hora certa mesmo sem rede.
 
