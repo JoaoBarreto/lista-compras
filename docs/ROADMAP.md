@@ -134,7 +134,8 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.3** Base das notificações e aviso de itens novos nas Compras
   - Permissão `POST_NOTIFICATIONS` (Android 13+, pedida em contexto), canais de notificação, `NotificationChecker` periódico (WorkManager, ~15 min), marcador `lastNotified*` em `sync_meta`, interruptor nas definições
   - ✔ Testes unitários: só itens de outro utilizador; vários itens → uma notificação agrupada; nunca duas vezes o mesmo item; sem permissão não falha
-  - ✔ No telemóvel: com a app fechada, um item adicionado pelo outro gera aviso em ≤ ~20 min
+  - ✔ No telemóvel: com a app fechada, um item adicionado pelo outro gera aviso (cerca de 15 min, mas pode demorar mais com o telemóvel parado; ver DECISIONS)
+  - Estado: implementado em 2026-11-02 (release v8, 1.3.0; 157 testes, lint limpo). "Definições" no topo (interruptor + Terminar sessão). Por verificar no telemóvel, com o outro telemóvel a adicionar.
 - [ ] **9.4** Motor de sincronização para várias collections + migração Room v1→v2
   - `pending_ops` ganha a coluna `collection`; `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier` e `OutboxCoalescer` passam a tratar `items`, `events` e `event_types`; subscrição realtime `events/*` e `event_types/*`
   - ✔ Migração Room testada (dados da v1 intactos, `schemas/2.json` em git); todos os testes de sync existentes continuam a passar; as Compras e Tarefas não mudam

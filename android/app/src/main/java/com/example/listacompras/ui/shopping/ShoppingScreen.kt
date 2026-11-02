@@ -34,7 +34,7 @@ fun ShoppingScreen(
     onDelete: (String) -> Unit,
     onClearChecked: () -> Unit,
     onErrorAcknowledged: () -> Unit,
-    onLogout: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -60,8 +60,8 @@ fun ShoppingScreen(
                         }
                     },
                     actions = {
-                        TextButton(onClick = onLogout) {
-                            Text(stringResource(R.string.shopping_button_logout))
+                        TextButton(onClick = onOpenSettings) {
+                            Text(stringResource(R.string.shopping_button_settings))
                         }
                     },
                 )

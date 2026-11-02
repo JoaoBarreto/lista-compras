@@ -40,4 +40,14 @@
     <string name="tasks_add_label">Adicionar tarefa</string>
     <string name="tasks_empty">Ainda não há tarefas. Escreve em baixo a primeira.</string>
     <string name="tasks_all_done">Tudo feito!</string>
+    <string name="shopping_button_settings">Definições</string>
+    <string name="settings_title">Definições</string>
+    <string name="settings_notify_shopping">Avisar-me de itens novos nas Compras</string>
+    <string name="settings_close">Fechar</string>
+    <string name="notif_channel_shopping">Itens novos nas Compras</string>
+    <string name="notif_shopping_more">%1$s e mais %2$d</string>
+    <plurals name="notif_shopping_title">
+        <item quantity="one">%d item novo nas Compras</item>
+        <item quantity="other">%d itens novos nas Compras</item>
+    </plurals>
 </resources>

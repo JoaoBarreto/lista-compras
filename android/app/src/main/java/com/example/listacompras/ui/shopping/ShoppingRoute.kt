@@ -1,5 +1,15 @@
 package com.example.listacompras.ui.shopping
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.listacompras.ui.settings.SettingsDialog
+import com.example.listacompras.ui.settings.SettingsViewModel
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -27,6 +37,12 @@ fun ShoppingRoute(
     modifier: Modifier = Modifier,
 ) {
     var selected by rememberSaveable { mutableStateOf(ListKind.SHOPPING) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    val settingsViewModel = hiltViewModel<SettingsViewModel>()
+    val notificationsOn by settingsViewModel.shoppingNotifications.collectAsStateWithLifecycle()
+    val askPermission = rememberNotificationPermissionRequester()
+    // Asked once, here, right after the first login: that is when the user learns the app can notify.
+    LaunchedEffect(Unit) { if (settingsViewModel.shouldAskPermission()) askPermission() }
     val stateHolder = rememberSaveableStateHolder()
 
     stateHolder.SaveableStateProvider(selected.name) {
@@ -44,9 +60,35 @@ fun ShoppingRoute(
             onDelete = viewModel::onDelete,
             onClearChecked = viewModel::onClearChecked,
             onErrorAcknowledged = viewModel::onErrorAcknowledged,
-            onLogout = onLogout,
+            onOpenSettings = { showSettings = true },
             modifier = modifier,
         )
+    }
+    if (showSettings) {
+        SettingsDialog(
+            shoppingNotifications = notificationsOn,
+            onShoppingNotificationsChange = {
+                settingsViewModel.onShoppingNotificationsChange(it)
+                if (it) askPermission() // a no-op when already granted or blocked by the system
+            },
+            onLogout = { showSettings = false; onLogout() },
+            onDismiss = { showSettings = false },
+        )
+    }
+}
+
+/** Returns a function that asks for the notification permission (Android 13+) if it is missing. */
+@Composable
+private fun rememberNotificationPermissionRequester(): () -> Unit {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    return {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 }
 
