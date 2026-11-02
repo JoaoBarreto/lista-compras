@@ -66,6 +66,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Testes com Turbine
 - [ ] **5.2** Ecrã da lista: duas secções, campo fixo de adição rápida, toque para marcar, deslizar para apagar, "Limpar comprados"
   - ✔ Funciona com avião ligado; teclado não tapa o campo de adição
+  - Estado: implementada (`ShoppingRoute`, `ShoppingScreen`, `AddItemBar`, `ShoppingItemRow`); compila, testes e lint passam. Por verificar no telemóvel: avião ligado, teclado, deslizar para apagar. Depois disto já é possível o teste de duas instâncias da 4.3.
 - [ ] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
   - ✔ Visível e compreensível nos quatro estados
   - Substituir os restos de diagnóstico da 4.3/4.4: o coletor `SyncStatus` temporário no `MainActivity` e o log dos valores brutos no `RealtimeModule` (`BuildConfig.DEBUG`) pelo indicador visível; chamar `SyncStatusProvider.acknowledgeErrors()` ao tocar no erro.

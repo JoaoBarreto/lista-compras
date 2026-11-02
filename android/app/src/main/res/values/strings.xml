@@ -10,6 +10,11 @@
     <string name="login_button_enter">Entrar</string>
 
     <string name="shopping_title">Compras</string>
-    <string name="shopping_placeholder">A lista de compras vai aparecer aqui.</string>
+    <string name="shopping_section_to_buy">Por comprar</string>
+    <string name="shopping_section_bought">Comprados</string>
+    <string name="shopping_clear_bought">Limpar comprados</string>
+    <string name="shopping_add_label">Adicionar item</string>
+    <string name="shopping_add_button">Adicionar</string>
+    <string name="shopping_delete">Apagar</string>
     <string name="shopping_button_logout">Terminar sessão</string>
 </resources>

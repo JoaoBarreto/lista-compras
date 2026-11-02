@@ -13,7 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.ui.login.LoginRoute
-import com.example.listacompras.ui.shopping.ShoppingScreen
+import com.example.listacompras.ui.shopping.ShoppingRoute
 
 @Composable
 fun AppNavHost(
@@ -43,6 +43,6 @@ fun AppNavHost(
         modifier = modifier,
     ) {
         composable(Routes.LOGIN) { LoginRoute() }
-        composable(Routes.SHOPPING) { ShoppingScreen(onLogout = sessionViewModel::logout) }
+        composable(Routes.SHOPPING) { ShoppingRoute(onLogout = sessionViewModel::logout) }
     }
 }
