@@ -1,6 +1,6 @@
-# Lista de Compras
+# Life Manager
 
-App Android de listas partilhadas por duas pessoas: **Compras** e **Tarefas da casa**. Funciona **offline** e sincroniza com um servidor [PocketBase](https://pocketbase.io) próprio, acessível por [Tailscale](https://tailscale.com).
+App Android pessoal do casal (antes "Lista de Compras"): **Compras**, **Tarefas da casa** e, em desenvolvimento (Fase 9), **calendário** com eventos coloridos por tipo, **notificações** e quantidades opcionais. Ver [DECISIONS](docs/DECISIONS.md). Funciona **offline** e sincroniza com um servidor [PocketBase](https://pocketbase.io) próprio, acessível por [Tailscale](https://tailscale.com).
 
 ## Funcionalidades
 
@@ -27,7 +27,7 @@ UI (Compose) ─► ViewModel ─► Repositório ─► Room (fonte de verdade 
 - O pull completo reconcilia o servidor com o local, sem apagar itens com operações pendentes.
 - O realtime é SSE (não WebSocket), com reconexão e *backoff*, e novo pull depois de cada reconexão.
 
-Detalhes em [`docs/`](docs/): [ARCHITECTURE](docs/ARCHITECTURE.md), [DATA_MODEL](docs/DATA_MODEL.md), [API](docs/API.md), [SERVER_SETUP](docs/SERVER_SETUP.md), [ANDROID_SETUP](docs/ANDROID_SETUP.md) e [ROADMAP](docs/ROADMAP.md).
+Detalhes em [`docs/`](docs/): [ARCHITECTURE](docs/ARCHITECTURE.md), [DATA_MODEL](docs/DATA_MODEL.md), [API](docs/API.md), [SERVER_SETUP](docs/SERVER_SETUP.md), [ANDROID_SETUP](docs/ANDROID_SETUP.md) e [ROADMAP](docs/ROADMAP.md) e [DECISIONS](docs/DECISIONS.md).
 
 ## Tecnologias
 

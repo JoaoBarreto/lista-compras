@@ -54,9 +54,9 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Teste: com API falsa a falhar e depois a recuperar, o outbox esvazia sem duplicar itens
 - [x] **4.2** `Reconciler` (pull completo)
   - ✔ Teste: remoto substitui local, exceto itens com operações pendentes; apagamentos remotos são aplicados
-- [ ] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
+- [x] **4.3** `RealtimeClient` (SSE): conectar, subscrever `items`, aplicar eventos, reconectar com backoff, re-subscrever + pull após reconectar
   - ✔ Duas instâncias (dois telemóveis/emuladores): alteração num aparece no outro em segundos
-  - Estado: implementada e verificada num telemóvel contra o servidor real (create/update/delete, reconexão ao reabrir). Falta o teste com duas instâncias, possível só depois da 5.2.
+  - Estado: implementada e verificada num telemóvel contra o servidor real (create/update/delete, reconexão ao reabrir). Fechada em 2026-11-02: o utilizador confirmou com dois telemóveis que a release v3 funciona como esperado.
 - [x] **4.4** `SyncStatus` derivado (Sincronizado / A sincronizar / Offline / Erro)
   - ✔ Reflete corretamente modo avião ligado/desligado
   - Verificado no telemóvel em 2026-10-30: modo avião ligado → Offline em ~2 ms; desligado → A sincronizar até ao `pull done` e só então Sincronizado.
@@ -91,9 +91,9 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Verificado no telemóvel em 2026-11-02 (um telemóvel). Atualizado em 3 commits (AndroidX; Gradle 9.8.2; Kotlin 2.4.21 + kotlinx-serialization 1.12.0).
 - [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
-- [ ] **6.3** Build release assinada e instalação nos dois telemóveis
+- [x] **6.3** Build release assinada e instalação nos dois telemóveis
   - ✔ Atualização por cima mantém os dados
-  - Estado: implementado (`applicationId` `com.joaobarreto.listacompras`, assinatura por `keystore.properties`, APK em `android/app/build/outputs/apk/release/app-release.apk`, assinatura confirmada com `apksigner`). Testado em 2026-11-02 com um telemóvel: instalação limpa e atualização por cima (v1 → v2, `versionCode` 2) mantiveram o login e os itens já sincronizados. Um item adicionado offline na v1 não apareceu na v2; um force-stop offline mantém o item pendente; a perda limitou-se à instalação por cima (aceite pelo utilizador). Falta o segundo telemóvel.
+  - Estado: implementado (`applicationId` `com.joaobarreto.listacompras`, assinatura por `keystore.properties`, APK em `android/app/build/outputs/apk/release/app-release.apk`, assinatura confirmada com `apksigner`). Testado em 2026-11-02 com um telemóvel: instalação limpa e atualização por cima (v1 → v2, `versionCode` 2) mantiveram o login e os itens já sincronizados. Um item adicionado offline na v1 não apareceu na v2; um force-stop offline mantém o item pendente; a perda limitou-se à instalação por cima (aceite pelo utilizador). Fechada em 2026-11-02: instalada e a funcionar no segundo telemóvel (confirmado pelo utilizador).
 
 - [ ] **6.4** Impedir a adição enquanto ainda não há lista ativa (primeira execução sem servidor alcançado)
   - ✔ Sem lista: botão desativado, o texto escrito mantém-se no campo e aparece "A obter a lista do servidor…"; com lista, tudo como antes
@@ -115,11 +115,47 @@ Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas,
   - ✔ "Por fazer / Feitas / Limpar feitas", sem quantidade, estados vazios próprios, tudo em `strings.xml`
   - Verificado no telemóvel em 2026-11-02 (release v3 instalada por cima da v2, um telemóvel).
 
+## Fase 9 · Life Manager (calendário, notificações, quantidades)
+Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa de "lista de compras" a **app pessoal do casal**, com o nome **Life Manager**; calendário partilhado com tipos de evento coloridos e extensíveis; notificações pelo método de poupança de bateria (verificação periódica, até ~15 min de atraso); quantidade opcional nos itens de Compras. Docs: [DATA_MODEL](DATA_MODEL.md#collection-event_types), [ARCHITECTURE](ARCHITECTURE.md#notificações-e-lembretes).
+
+- [ ] **9.1** Quantidade opcional nas Compras
+  - Segundo campo ao lado do nome, só em Compras; vazio = não se grava nem mostra quantidade (a linha mostra só o nome). Máx. 30 caracteres. Editar a quantidade de um item existente fica fora do âmbito.
+  - ✔ Testes: `onAdd` com quantidade vazia/só espaços → `quantity = null`; com valor → guardada com trim; a lista mostra a quantidade só quando existe; Tarefas não mostram o campo; funciona offline
+- [ ] **9.2** Nome "Life Manager" e documentação
+  - Só o nome visível (`app_name`) e README/docs. **Não mudar** `applicationId`, pacote, nome da base Room nem keystore (senão seria outra app e os dois telemóveis perdiam os dados).
+  - ✔ O ícone da app mostra "Life Manager"; docs coerentes com a nova visão; `DECISIONS.md` criado
+  - Estado: docs feitos em 2026-11-02; falta alterar `app_name` no código e verificar no telemóvel.
+- [ ] **9.3** Base das notificações e aviso de itens novos nas Compras
+  - Permissão `POST_NOTIFICATIONS` (Android 13+, pedida em contexto), canais de notificação, `NotificationChecker` periódico (WorkManager, ~15 min), marcador `lastNotified*` em `sync_meta`, interruptor nas definições
+  - ✔ Testes unitários: só itens de outro utilizador; vários itens → uma notificação agrupada; nunca duas vezes o mesmo item; sem permissão não falha
+  - ✔ No telemóvel: com a app fechada, um item adicionado pelo outro gera aviso em ≤ ~20 min
+- [ ] **9.4** Motor de sincronização para várias collections + migração Room v1→v2
+  - `pending_ops` ganha a coluna `collection`; `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier` e `OutboxCoalescer` passam a tratar `items`, `events` e `event_types`; subscrição realtime `events/*` e `event_types/*`
+  - ✔ Migração Room testada (dados da v1 intactos, `schemas/2.json` em git); todos os testes de sync existentes continuam a passar; as Compras e Tarefas não mudam
+- [ ] **9.5** Collections `event_types` e `events` no servidor
+  - Criadas no dashboard do PocketBase (migração gerada e guardada em git), com os três tipos iniciais: Família, Veronica, João
+  - ✔ Pedido sem token não devolve dados; ambos os utilizadores leem e escrevem; ver [DATA_MODEL](DATA_MODEL.md)
+  - Estado: collections criadas pelo utilizador no dashboard em 2026-11-02; campos e regras por confirmar contra o DATA_MODEL na 9.6. O utilizador aceita reinstalar a app nos dois telemóveis, mas a migração Room (9.4) mantém-se por boa prática.
+- [ ] **9.6** Camada de dados do calendário (offline-first)
+  - `EventRepository`, `EventTypeRepository`, entidades Room, DTOs, mappers
+  - ✔ Testes: criar/editar/apagar evento e tipo offline gera a `pending_op` certa; pull e realtime aplicam eventos dos dois utilizadores
+- [ ] **9.7** Ecrã do calendário (3.º separador)
+  - Agenda por dia/mês com `DatePicker`/`TimePicker` do Material 3 (sem biblioteca de calendário), criar/editar/apagar evento, escolher o tipo, gerir tipos (nome + cor), cada evento com a cor do seu tipo
+  - ✔ Eventos coloridos por tipo, com texto do tipo também (a cor nunca é a única pista); modo escuro legível; TalkBack lê título, data e tipo; funciona offline
+- [ ] **9.8** Lembretes de eventos
+  - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (nenhuma / à hora / 1 h / 1 dia). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
+  - ✔ Evento criado pelo outro telemóvel é agendado aqui; apagar cancela o alarme; sobrevive a reinício do telemóvel
+- [ ] **9.9** Aviso de evento novo criado pelo outro
+  - Reutiliza o `NotificationChecker` da 9.3
+  - ✔ Mesmas regras da 9.3 (só do outro, agrupado, sem repetição)
+
 ## Fase 7 · Ideias futuras (fora do MVP)
 
 - [ ] Mais listas além de Compras e Tarefas (supermercado, farmácia…) com criação livre (a versão mínima, só Compras + Tarefas, é a Fase 8)
 - [ ] Categorias com agrupamento visual
 - [ ] Sugestões a partir do histórico (autocomplete)
-- [ ] Notificação opcional quando o outro adiciona/conclui itens
+- [ ] Notificação quando o outro conclui itens (a de "adicionou" está na Fase 9)
+- [ ] Eventos recorrentes (anuais, semanais) no calendário
+- [ ] Editar a quantidade de um item já existente
 - [ ] Widget no ecrã inicial
 - [ ] Partilha de texto para a app ("adicionar à lista")

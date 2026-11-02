@@ -57,6 +57,39 @@ MVP: existe uma única lista, criada manualmente no dashboard (ou por migração
 
 Com apenas duas contas criadas pelo superuser, "autenticado" equivale a "autorizado". Se alguma vez houver mais agregados, será preciso modelar membros por lista e restringir as regras.
 
+## Collection `event_types`
+
+Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os tipos iniciais **Família**, **Veronica** e **João** são criados à mão; a app permite criar mais.
+
+| Campo | Tipo | Obrigatório | Notas |
+|---|---|---|---|
+| `id` | text (auto, 15 chars) | sim | Pode ser enviado pelo cliente no create |
+| `name` | text (1–30) | sim | Ex.: "Família" |
+| `color` | text | sim | Cor em hexadecimal `#RRGGBB`; a UI ajusta o contraste ao tema escuro |
+| `created` / `updated` | autodate | sim | |
+
+**Regras (list/view/create/update/delete):** `@request.auth.id != ""`. Apagar um tipo em uso: ver `events.type`.
+
+## Collection `events`
+
+| Campo | Tipo | Obrigatório | Notas |
+|---|---|---|---|
+| `id` | text (auto, 15 chars `[a-z0-9]`) | sim | Pode ser enviado pelo cliente no create |
+| `title` | text (1–100) | sim | |
+| `notes` | text (≤ 500) | não | |
+| `starts_at` | date | sim | UTC; a app converte para o fuso do telemóvel |
+| `all_day` | bool | sim (default `false`) | Se verdadeiro, a hora é ignorada |
+| `type` | relation → `event_types` (single) | sim | Sem cascade delete: a app impede apagar tipos em uso |
+| `remind_before` | number (minutos) | não | Vazio = sem lembrete; 0 = à hora; 60; 1440 (1 dia) |
+| `created_by` | relation → `users` (single) | sim | Quem criou (a notificação ignora os próprios eventos) |
+| `created` / `updated` | autodate | sim | |
+
+**Índice:** `(starts_at)`. **Regras:** como `items`, com `create` a exigir `@request.body.created_by = @request.auth.id`.
+
+**Room (versão 2):** `events` e `event_types` espelham estas tabelas (+ `syncState`); `pending_ops` ganha a coluna `collection` (`items`|`events`|`event_types`) e `itemId` passa a significar "id do registo". `sync_meta` ganha as chaves `lastNotifiedItemAt` e `lastNotifiedEventAt` (marcadores das notificações). A migração 1→2 é obrigatória (sem `fallbackToDestructiveMigration`) e o `schemas/2.json` vai para git.
+
+> "Migração" tem dois sentidos: a do **PocketBase** é um ficheiro gerado ao criar collections no dashboard (regista o esquema para o servidor ser reconstruível); a da **Room** acrescenta tabelas à cópia local de cada telemóvel sem perder dados.
+
 ## Modelos na app
 
 ### Domain

@@ -97,6 +97,17 @@ ui  ──►  domain  ◄──  data
 - **Token:** a subscrição fica autorizada com o token usado no `POST`. `TokenStore.tokenFlow` emite também nas renovações do mesmo utilizador (o `AuthState` não emite nesse caso); o cliente usa `collectLatest` sobre ele, por isso uma renovação reinicia a ligação (nova subscrição) e o logout cancela-a.
 - **Ciclo de vida:** `MainActivity` corre `RealtimeSync.run()` dentro de `repeatOnLifecycle(STARTED)`: a ligação só existe com a app visível. Em segundo plano trata do resto o `SyncWorker`; ao voltar, a nova ligação faz pull e apanha o que se perdeu.
 
+## Notificações e lembretes
+
+Decisão em [DECISIONS](DECISIONS.md): poupança de bateria, sem serviço permanente nem FCM. Dois mecanismos independentes (Fase 9):
+
+1. **Aviso de "o outro adicionou"** (itens de Compras e eventos novos): `NotificationCheckWorker` (WorkManager periódico, ~15 min, restrição de rede) faz o `process`/`pull` do sync e depois compara o Room com os marcadores `lastNotifiedItemAt`/`lastNotifiedEventAt` (`sync_meta`). Só conta registos de **outro** utilizador (`added_by`/`created_by` ≠ eu) mais recentes que o marcador; vários viram **uma** notificação agrupada; o marcador avança depois de notificar, por isso nunca repete. Com a app aberta o realtime já mostra a alteração, mas a verificação corre à mesma (o marcador evita duplicados). Só funciona com o Tailscale ligado.
+2. **Lembretes de eventos:** `ReminderScheduler` agenda alarmes locais (`AlarmManager`) a partir dos eventos no Room (`starts_at - remind_before`). Reagenda após cada sync/edição/apagar e no arranque do telemóvel (`RECEIVE_BOOT_COMPLETED`). Funciona offline porque só depende da base local.
+
+Comum: permissão `POST_NOTIFICATIONS` (Android 13+, pedida em contexto), canais separados (compras, eventos, lembretes), um interruptor por tipo nas definições. Nada de nomes de itens/eventos em logs. A camada `domain` define as interfaces (`NotificationChecker`, `ReminderScheduler`); a implementação Android fica em `data`.
+
+**Sync para várias collections (9.4):** o outbox, o `Reconciler` e o `RealtimeEventApplier` passam a ser parametrizados pela collection (`items`, `events`, `event_types`); as regras de coalescência, `SyncLock` e backoff mantêm-se.
+
 ## Autenticação
 
 - Duas contas criadas manualmente pelo superuser no PocketBase; registo público desativado.
