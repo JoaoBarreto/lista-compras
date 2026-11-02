@@ -85,10 +85,10 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Sem avisos do compilador; `lintDebug` só com avisos de atualização de versões (tratados à parte, ver 6.1b)
   - ✔ Sem textos visíveis hardcoded
   - Verificado no computador em 2026-11-02: lint passou de 16 para 8 avisos (todos de versões); sem avisos do compilador. O deslizar para apagar passou para a API `onDismiss`; por reconfirmar no telemóvel.
-- [ ] **6.1b** Atualizar dependências desatualizadas (decisão do utilizador, 2026-11-02)
+- [x] **6.1b** Atualizar dependências desatualizadas (decisão do utilizador, 2026-11-02)
   - Confirmar a última versão estável de cada uma (core-ktx, activity-compose, Compose BOM, navigation-compose, Kotlin, kotlinx-serialization-json, Gradle) antes de fixar
   - ✔ `testDebugUnitTest`, `assembleDebug` e `lintDebug` passam; app testada no telemóvel
-  - Estado: atualizado em 3 commits (AndroidX; Gradle 9.8.2; Kotlin 2.4.21 + kotlinx-serialization 1.12.0). 132 testes, 0 avisos do compilador, lint sem avisos. Por verificar no telemóvel.
+  - Verificado no telemóvel em 2026-11-02 (um telemóvel). Atualizado em 3 commits (AndroidX; Gradle 9.8.2; Kotlin 2.4.21 + kotlinx-serialization 1.12.0).
 - [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
 - [ ] **6.3** Build release assinada e instalação nos dois telemóveis
