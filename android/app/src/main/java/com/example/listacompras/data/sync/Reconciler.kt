@@ -10,6 +10,7 @@ import com.example.listacompras.data.remote.dto.ItemDto
 import com.example.listacompras.data.repository.ActiveListProvider
 import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.data.repository.toEntity
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.repository.ListRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.withLock
@@ -19,7 +20,7 @@ import java.io.IOException
 import java.time.Clock
 
 /**
- * Full pull: the server's items of the active list replace the local ones, except items that
+ * Full pull: the server's items of every known list replace the local ones, except items that
  * still have pending operations (their local version is newer than the server's). Items missing
  * from the server are deleted locally, which also applies deletions made on another device.
  *
@@ -45,12 +46,15 @@ class Reconciler(
         // Logged out, the server may answer with an empty list, which would wipe the local items.
         if (tokenProvider.token().isNullOrBlank()) return@withLock SyncOutcome.AuthLost
         try {
-            val listId = activeList.listId()?.takeIf { it.isNotEmpty() }
-                ?: run {
-                    if (!listRepository.ensureActiveList()) return@withLock SyncOutcome.Retry
-                    activeList.listId()?.takeIf { it.isNotEmpty() } ?: return@withLock SyncOutcome.Retry
-                }
-            apply(listId, fetchAll(listId))
+            // Shopping must be known to pull at all. A tasks list that is not resolved yet (or does
+            // not exist on the server) is not an error: it must not make every pull a "Retry".
+            val missing = ListKind.entries.any { activeList.listId(it).isNullOrEmpty() }
+            if (missing && !listRepository.ensureLists() && activeList.listId(ListKind.SHOPPING).isNullOrEmpty()) {
+                return@withLock SyncOutcome.Retry
+            }
+            val listIds = activeList.knownListIds()
+            if (listIds.isEmpty()) return@withLock SyncOutcome.Retry
+            apply(listIds.associateWith { fetchAll(it) })
             SyncOutcome.Done
         } catch (e: CancellationException) {
             throw e
@@ -86,14 +90,17 @@ class Reconciler(
         }
     }
 
-    private suspend fun apply(listId: String, remote: List<ItemDto>) {
+    /** Each list is reconciled against its own remote items only, so one list never deletes another's. */
+    private suspend fun apply(remoteByList: Map<String, List<ItemDto>>) {
         transactions.run {
             val pending = pendingOpDao.getPendingItemIds().toSet()
-            val remoteIds = remote.mapTo(HashSet()) { it.id }
-            val staleLocal = itemDao.getItems(listId).map { it.id }.filter { it !in remoteIds && it !in pending }
+            for ((listId, remote) in remoteByList) {
+                val remoteIds = remote.mapTo(HashSet()) { it.id }
+                val staleLocal = itemDao.getItems(listId).map { it.id }.filter { it !in remoteIds && it !in pending }
 
-            itemDao.upsertAll(remote.filter { it.id !in pending }.map { it.toEntity() })
-            staleLocal.chunked(DELETE_CHUNK).forEach { itemDao.deleteByIds(it) }
+                itemDao.upsertAll(remote.filter { it.id !in pending }.map { it.toEntity() })
+                staleLocal.chunked(DELETE_CHUNK).forEach { itemDao.deleteByIds(it) }
+            }
             syncMetaDao.put(SyncMetaEntity(LAST_FULL_SYNC_KEY, clock.millis().toString()))
         }
     }

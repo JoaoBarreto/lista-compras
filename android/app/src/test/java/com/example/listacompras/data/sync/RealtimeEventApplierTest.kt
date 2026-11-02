@@ -1,5 +1,6 @@
 package com.example.listacompras.data.sync
 
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.data.local.entity.ItemEntity
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.repository.CountingSyncScheduler
@@ -69,12 +70,21 @@ class RealtimeEventApplierTest {
             object : CurrentUserProvider { override fun currentUserId() = "u" },
             json, Clock.systemUTC(), CountingSyncScheduler(), newId = { "mine00000000001" },
         )
-        repo.add("Leite")
+        repo.add(ListKind.SHOPPING, "Leite")
 
         applier.apply(event("create", record("mine00000000001", name = "server copy")))
         applier.apply(event("delete", record("mine00000000001")))
 
         assertEquals("Leite", itemDao.items.value.getValue("mine00000000001").name)
+    }
+
+    @Test
+    fun `records of the tasks list are applied once it is known`() = runTest {
+        activeList.tasksId.value = "list2"
+
+        applier.apply(event("create", record("x", list = "list2")))
+
+        assertEquals(setOf("x"), itemDao.items.value.keys)
     }
 
     @Test

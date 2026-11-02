@@ -7,6 +7,7 @@ import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
 import com.example.listacompras.data.remote.dto.CheckedPatch
 import com.example.listacompras.domain.model.Category
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.repository.SyncScheduler
@@ -38,14 +39,14 @@ class ItemRepositoryImpl(
 ) : ItemRepository {
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeItems(): Flow<List<ShoppingItem>> =
-        activeList.observeListId().flatMapLatest { listId ->
+    override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> =
+        activeList.observeListId(kind).flatMapLatest { listId ->
             if (listId.isNullOrEmpty()) flowOf(emptyList())
             else itemDao.observeItems(listId).map { items -> items.map { it.toDomain() } }
         }
 
-    override suspend fun add(name: String, quantity: String?, category: Category?): Boolean {
-        val listId = activeList.listId()?.takeIf { it.isNotEmpty() } ?: return false
+    override suspend fun add(kind: ListKind, name: String, quantity: String?, category: Category?): Boolean {
+        val listId = activeList.listId(kind)?.takeIf { it.isNotEmpty() } ?: return false
         val userId = currentUser.currentUserId() ?: return false
         val now = clock.millis()
         val item = ItemEntity(
@@ -100,8 +101,8 @@ class ItemRepositoryImpl(
         if (changed) syncScheduler.requestSync()
     }
 
-    override suspend fun clearChecked() {
-        val listId = activeList.listId()?.takeIf { it.isNotEmpty() } ?: return
+    override suspend fun clearChecked(kind: ListKind) {
+        val listId = activeList.listId(kind)?.takeIf { it.isNotEmpty() } ?: return
         val now = clock.millis()
         val changed = transactions.run {
             val ids = itemDao.getCheckedIds(listId)

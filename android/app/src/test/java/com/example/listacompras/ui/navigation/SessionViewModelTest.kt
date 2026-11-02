@@ -1,6 +1,7 @@
 package com.example.listacompras.ui.navigation
 
 import com.example.listacompras.data.repository.CountingSyncScheduler
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.model.AuthState
 import com.example.listacompras.domain.model.UserSession
 import com.example.listacompras.domain.repository.AuthRepository
@@ -31,8 +32,8 @@ class SessionViewModelTest {
 
     private class CountingListRepository : ListRepository {
         var calls = 0
-        override val hasActiveList = MutableStateFlow(true)
-        override suspend fun ensureActiveList(): Boolean { calls++; return true }
+        override fun hasList(kind: ListKind) = MutableStateFlow(true)
+        override suspend fun ensureLists(): Boolean { calls++; return true }
     }
 
     private val auth = FakeAuthRepository()

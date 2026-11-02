@@ -44,7 +44,7 @@ ui  ──►  domain  ◄──  data
 
 ### Receber alterações do outro telemóvel
 1. `RealtimeClient` mantém uma ligação SSE à subscrição `items`.
-2. Cada evento `create|update|delete` é aplicado ao Room (ignorando itens com operações pendentes locais, ver abaixo).
+2. Cada evento `create|update|delete` de uma lista conhecida é aplicado ao Room (ignorando itens com operações pendentes locais, ver abaixo).
 3. UI atualiza sozinha.
 
 ## Sincronização offline
@@ -66,7 +66,7 @@ ui  ──►  domain  ◄──  data
    - **`CREATE` já tentado (`attempts > 0`) fica congelado:** pode já existir no servidor (a resposta pode ter-se perdido). Não se fundem `UPDATE`s nele (um reenvio seria rejeitado por id duplicado) e um `DELETE` posterior mantém-se (senão ficava um item fantasma no servidor).
    - O congelamento só funciona se `attempts > 0` significar "pode ter chegado ao servidor": o `SyncWorker` tem de gravar `incrementAttempts` **antes** de enviar o pedido (se só incrementasse após a resposta, um worker morto a meio do `POST` deixava `attempts == 0` e o `CREATE`+`DELETE` seguinte desaparecia, deixando um item fantasma). Também só pode correr um worker de cada vez (trabalho único).
    - Corre no início de cada passagem do `OutboxProcessor`, antes de enviar seja o que for (assim nenhuma operação está em voo).
-3. **Pull completo** (`Reconciler`, `data/sync`): `GET` da lista completa (`perPage=500`, `sort=created,id`; são centenas de itens, no máximo) e reconciliação: o remoto substitui o local, **exceto** itens com operações em `pending_ops`; o que não existe no servidor e não tem operações pendentes é apagado localmente.
+3. **Pull completo** (`Reconciler`, `data/sync`): `GET` completo de cada lista conhecida (Compras e Tarefas; `perPage=500`, `sort=created,id`; são centenas de itens, no máximo; tudo é obtido antes de escrever) e reconciliação, lista a lista (o que falta no servidor só se apaga na própria lista): o remoto substitui o local, **exceto** itens com operações em `pending_ops`; o que não existe no servidor e não tem operações pendentes é apagado localmente.
    - Isto também resolve apagamentos feitos noutro dispositivo enquanto este estava offline (um filtro por `updated` não os apanharia). Um `DELETE` pendente não ressuscita o item: está pendente, logo é ignorado.
    - **Nunca se aplica um snapshot parcial:** todas as páginas são lidas antes de tocar no Room e tudo é aplicado numa só transação. Se uma página falhar, nada muda (aplicar só parte apagaria os itens ainda não lidos). Só se mexe nos itens da lista ativa.
    - Os ids pendentes são lidos **dentro** da transação de aplicação, não antes do pedido, para proteger escritas feitas durante o fetch.

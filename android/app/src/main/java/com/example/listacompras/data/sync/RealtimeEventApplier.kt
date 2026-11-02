@@ -42,7 +42,7 @@ class RealtimeEventApplier(
             return
         }
         lock.mutex.withLock {
-            if (event.record.list != activeList.listId()) return@withLock
+            if (event.record.list !in activeList.knownListIds()) return@withLock
             transactions.run {
                 if (event.record.id in pendingOpDao.getPendingItemIds()) return@run
                 if (event.action == DELETE) itemDao.deleteById(event.record.id)

@@ -2,6 +2,7 @@ package com.example.listacompras.ui.shopping
 
 import app.cash.turbine.test
 import com.example.listacompras.domain.model.Category
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.model.SyncStatus
@@ -29,14 +30,14 @@ class ShoppingViewModelTest {
     private class FakeItemRepository : ItemRepository {
         val items = MutableStateFlow<List<ShoppingItem>>(emptyList())
         val calls = mutableListOf<String>()
-        override fun observeItems(): Flow<List<ShoppingItem>> = items
-        override suspend fun add(name: String, quantity: String?, category: Category?): Boolean {
+        override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> = items
+        override suspend fun add(kind: ListKind, name: String, quantity: String?, category: Category?): Boolean {
             calls += "add:$name"
             return true
         }
         override suspend fun setChecked(id: String, checked: Boolean) { calls += "check:$id:$checked" }
         override suspend fun delete(id: String) { calls += "delete:$id" }
-        override suspend fun clearChecked() { calls += "clear" }
+        override suspend fun clearChecked(kind: ListKind) { calls += "clear" }
     }
 
     private class FakeSyncStatusProvider : SyncStatusProvider {
@@ -47,8 +48,8 @@ class ShoppingViewModelTest {
 
     private class FakeListRepository : ListRepository {
         val has = MutableStateFlow(true)
-        override val hasActiveList: Flow<Boolean> = has
-        override suspend fun ensureActiveList() = has.value
+        override fun hasList(kind: ListKind): Flow<Boolean> = has
+        override suspend fun ensureLists() = has.value
     }
 
     private val repo = FakeItemRepository()
@@ -84,7 +85,7 @@ class ShoppingViewModelTest {
         val source = MutableSharedFlow<List<ShoppingItem>>()
         val vm = ShoppingViewModel(
             object : ItemRepository by repo {
-                override fun observeItems(): Flow<List<ShoppingItem>> = source
+                override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> = source
             },
             lists,
             sync,

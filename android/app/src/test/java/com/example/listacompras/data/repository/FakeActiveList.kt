@@ -1,12 +1,16 @@
 package com.example.listacompras.data.repository
 
+import com.example.listacompras.domain.model.ListKind
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class FakeActiveList(initial: String?) : ActiveListProvider {
+class FakeActiveList(initial: String?, tasksInitial: String? = null) : ActiveListProvider {
     val id = MutableStateFlow(initial)
-    override fun observeListId() = id
-    override suspend fun listId() = id.value
-    override suspend fun setListId(id: String) { this.id.value = id }
+    val tasksId = MutableStateFlow(tasksInitial)
+    private fun flow(kind: ListKind) = if (kind == ListKind.SHOPPING) id else tasksId
+    override fun observeListId(kind: ListKind) = flow(kind)
+    override suspend fun listId(kind: ListKind) = flow(kind).value
+    override suspend fun setListId(kind: ListKind, id: String) { flow(kind).value = id }
+    override suspend fun knownListIds() = setOfNotNull(id.value, tasksId.value).filter { it.isNotEmpty() }.toSet()
 }
 
 class CountingSyncScheduler : com.example.listacompras.domain.repository.SyncScheduler {

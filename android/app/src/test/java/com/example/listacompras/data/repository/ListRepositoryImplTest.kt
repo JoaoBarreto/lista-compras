@@ -3,6 +3,7 @@ package com.example.listacompras.data.repository
 import com.example.listacompras.data.remote.AuthInterceptor
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.remote.TokenProvider
+import com.example.listacompras.domain.model.ListKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -20,12 +21,7 @@ import org.junit.Test
 class ListRepositoryImplTest {
 
     private val server = MockWebServer()
-    private val activeList = object : ActiveListProvider {
-        val id = MutableStateFlow<String?>(null)
-        override fun observeListId() = id
-        override suspend fun listId() = id.value
-        override suspend fun setListId(id: String) { this.id.value = id }
-    }
+    private val activeList = FakeActiveList(null)
     private lateinit var repository: ListRepositoryImpl
 
     @Before
@@ -45,36 +41,88 @@ class ListRepositoryImplTest {
     ).build()
 
     @Test
-    fun hasActiveListFollowsTheStoredId() = runBlocking {
-        assertFalse(repository.hasActiveList.first())
+    fun hasListFollowsTheStoredId() = runBlocking {
+        assertFalse(repository.hasList(ListKind.SHOPPING).first())
         activeList.id.value = "list1"
-        assertTrue(repository.hasActiveList.first())
+        assertTrue(repository.hasList(ListKind.SHOPPING).first())
     }
 
     @Test
     fun fetchesTheFirstListAndStoresItsId() = runBlocking {
         server.enqueue(page("list1"))
 
-        assertTrue(repository.ensureActiveList())
+        assertTrue(repository.ensureLists())
 
         assertEquals("list1", activeList.id.value)
-        assertEquals("/api/collections/lists/records?sort=created&perPage=1", server.takeRequest().target)
+        assertEquals("/api/collections/lists/records?sort=created&perPage=20", server.takeRequest().target)
     }
 
     @Test
-    fun doesNotCallTheServerWhenTheListIsAlreadyKnown() = runBlocking {
-        activeList.id.value = "known"
+    fun storesTheSecondListAsTasks() = runBlocking {
+        server.enqueue(page("list1", "list2"))
 
-        assertTrue(repository.ensureActiveList())
+        assertTrue(repository.ensureLists())
+
+        assertEquals("list1", activeList.id.value)
+        assertEquals("list2", activeList.tasksId.value)
+    }
+
+    @Test
+    fun doesNotCallTheServerWhenBothListsAreKnown() = runBlocking {
+        activeList.id.value = "known"
+        activeList.tasksId.value = "tasks"
+
+        assertTrue(repository.ensureLists())
 
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun anInstallWithOnlyShoppingGetsTasksWithoutChangingShopping() = runBlocking {
+        activeList.id.value = "shop"
+        server.enqueue(page("shop", "tasks"))
+
+        assertTrue(repository.ensureLists())
+
+        assertEquals("shop", activeList.id.value)
+        assertEquals("tasks", activeList.tasksId.value)
+    }
+
+    @Test
+    fun theTasksListIsTheOldestOneThatIsNotShopping() = runBlocking {
+        activeList.id.value = "second"
+        server.enqueue(page("first", "second", "third"))
+
+        assertTrue(repository.ensureLists())
+
+        assertEquals("second", activeList.id.value)
+        assertEquals("first", activeList.tasksId.value)
+    }
+
+    @Test
+    fun aServerWithOnlyOneListStillGivesShopping() = runBlocking {
+        server.enqueue(page("list1"))
+
+        assertTrue(repository.ensureLists())
+
+        assertEquals("list1", activeList.id.value)
+        assertEquals(null, activeList.tasksId.value)
+    }
+
+    @Test
+    fun withShoppingKnownAnOfflineTasksLookupIsStillTrue() = runBlocking {
+        activeList.id.value = "shop"
+        server.close()
+
+        assertTrue(repository.ensureLists())
+        assertEquals(null, activeList.tasksId.value)
     }
 
     @Test
     fun returnsFalseAndStoresNothingWhenOffline() = runBlocking {
         server.close()
 
-        assertFalse(repository.ensureActiveList())
+        assertFalse(repository.ensureLists())
         assertEquals(null, activeList.id.value)
     }
 
@@ -82,7 +130,7 @@ class ListRepositoryImplTest {
     fun returnsFalseWhenThereAreNoLists() = runBlocking {
         server.enqueue(page())
 
-        assertFalse(repository.ensureActiveList())
+        assertFalse(repository.ensureLists())
         assertEquals(null, activeList.id.value)
     }
 
@@ -90,6 +138,6 @@ class ListRepositoryImplTest {
     fun returnsFalseOnServerError() = runBlocking {
         server.enqueue(MockResponse.Builder().code(500).build())
 
-        assertFalse(repository.ensureActiveList())
+        assertFalse(repository.ensureLists())
     }
 }

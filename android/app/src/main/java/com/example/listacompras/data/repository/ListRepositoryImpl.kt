@@ -1,6 +1,7 @@
 package com.example.listacompras.data.repository
 
 import com.example.listacompras.data.remote.PocketBaseApi
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.repository.ListRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
@@ -18,22 +19,36 @@ class ListRepositoryImpl(
     private val ioDispatcher: CoroutineDispatcher,
 ) : ListRepository {
 
-    override val hasActiveList: Flow<Boolean> =
-        activeList.observeListId().map { !it.isNullOrEmpty() }.distinctUntilChanged()
+    override fun hasList(kind: ListKind): Flow<Boolean> =
+        activeList.observeListId(kind).map { !it.isNullOrEmpty() }.distinctUntilChanged()
 
-    override suspend fun ensureActiveList(): Boolean = withContext(ioDispatcher) {
-        if (!activeList.listId().isNullOrEmpty()) return@withContext true
+    override suspend fun ensureLists(): Boolean = withContext(ioDispatcher) {
+        var shopping = activeList.listId(ListKind.SHOPPING)?.takeIf { it.isNotEmpty() }
+        var tasks = activeList.listId(ListKind.TASKS)?.takeIf { it.isNotEmpty() }
+        if (shopping != null && tasks != null) return@withContext true
         try {
-            val list = api.listLists().items.firstOrNull() ?: return@withContext false
-            activeList.setListId(list.id)
+            // Oldest first: the first list is shopping, the next one is tasks. Stored ids are never replaced.
+            val lists = api.listLists(perPage = MAX_LISTS).items
+            if (shopping == null) {
+                shopping = lists.firstOrNull()?.id ?: return@withContext false
+                activeList.setListId(ListKind.SHOPPING, shopping)
+            }
+            if (tasks == null) {
+                tasks = lists.firstOrNull { it.id != shopping }?.id
+                if (tasks != null) activeList.setListId(ListKind.TASKS, tasks)
+            }
             true
         } catch (_: IOException) {
-            false
+            shopping != null
         } catch (_: HttpException) {
-            false
+            shopping != null
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            false
+            shopping != null
         }
+    }
+
+    private companion object {
+        const val MAX_LISTS = 20
     }
 }

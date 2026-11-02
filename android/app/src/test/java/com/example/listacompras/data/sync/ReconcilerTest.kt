@@ -1,5 +1,6 @@
 package com.example.listacompras.data.sync
 
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.data.local.entity.ItemEntity
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.remote.TokenProvider
@@ -40,8 +41,8 @@ class ReconcilerTest {
         override suspend fun <T> run(block: suspend () -> T): T = block()
     }
     private val lists = object : ListRepository {
-        override val hasActiveList = activeList.id.map { !it.isNullOrEmpty() }
-        override suspend fun ensureActiveList(): Boolean {
+        override fun hasList(kind: ListKind) = activeList.observeListId(kind).map { !it.isNullOrEmpty() }
+        override suspend fun ensureLists(): Boolean {
             if (listAvailable) activeList.id.value = "list1"
             return listAvailable
         }
@@ -86,6 +87,38 @@ class ReconcilerTest {
     }
 
     @Test
+    fun `both lists are pulled and one never deletes the other's items`() = runTest {
+        activeList.tasksId.value = "tasks1"
+        itemDao.upsert(local("shop-gone", list = "list1"))
+        itemDao.upsert(local("task-gone", list = "tasks1"))
+        server(remote("shop-new", list = "list1"), remote("task-new", list = "tasks1"))
+
+        assertEquals(SyncOutcome.Done, reconciler.pull())
+
+        assertEquals(setOf("shop-new", "task-new"), itemDao.items.value.keys)
+    }
+
+    @Test
+    fun `a missing tasks list does not make the pull fail`() = runTest {
+        server(remote("a"))
+
+        assertEquals(SyncOutcome.Done, reconciler.pull())
+
+        assertEquals(setOf("a"), itemDao.items.value.keys)
+        assertNull(activeList.tasksId.value)
+    }
+
+    @Test
+    fun `items of the tasks list survive a pull while the tasks list is unknown`() = runTest {
+        itemDao.upsert(local("t", list = "tasks1"))
+        server(remote("a"))
+
+        reconciler.pull()
+
+        assertTrue("t" in itemDao.items.value)
+    }
+
+    @Test
     fun `without a session the local items are untouched`() = runTest {
         itemDao.upsert(local("a"))
         token = null
@@ -97,7 +130,7 @@ class ReconcilerTest {
 
     @Test
     fun `an item with a pending UPDATE keeps its local version`() = runTest {
-        repo.add("Leite")
+        repo.add(ListKind.SHOPPING, "Leite")
         val id = itemDao.items.value.keys.single()
         api.server[id] = remote(id, name = "Leite")
         repo.setChecked(id, true)
@@ -113,7 +146,7 @@ class ReconcilerTest {
 
     @Test
     fun `a pending CREATE that is not on the server yet is kept`() = runTest {
-        repo.add("Leite")
+        repo.add(ListKind.SHOPPING, "Leite")
         server(remote("other"))
 
         reconciler.pull()

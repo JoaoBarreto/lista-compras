@@ -90,7 +90,7 @@ Base de dados `lista_compras.db` (versão 1, schema exportado em `android/app/sc
 
 - `items` (`ItemEntity`): `id` (PK), `listId`, `name`, `quantity?`, `checked`, `category?` (string crua do servidor; o mapeamento para `Category` é feito no repositório), `addedBy`, `checkedBy?`, `createdAt`, `updatedAt` (epoch millis), `syncState`. Índice `(listId, checked)`.
 - `pending_ops` (`PendingOpEntity`): `opId` (auto), `itemId`, `type` (`CREATE|UPDATE|DELETE`), `payloadJson`, `createdAt`, `attempts`. Índice em `itemId`. **Sem chave estrangeira para `items`**: um `DELETE` pendente tem de sobreviver à linha apagada.
-- `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`. Chaves em uso: `activeListId`, `discardedOps` (operações descartadas), `discardedAck` (valor de `discardedOps` já reconhecido pelo utilizador), `lastFullSyncAt` (último pull com sucesso, epoch millis).
+- `sync_meta` (`SyncMetaEntity`): `key` (PK), `value`. Chaves em uso: `activeListId` (Compras), `tasksListId` (Tarefas), `discardedOps` (operações descartadas), `discardedAck` (valor de `discardedOps` já reconhecido pelo utilizador), `lastFullSyncAt` (último pull com sucesso, epoch millis).
 
 DAOs: `ItemDao`, `PendingOpDao` (com `updatePayload`, usado pela coalescência), `SyncMetaDao` (com `observe(key)`, usado para a chave `activeListId`). Os testes usam base de dados em memória (`androidTest`).
 
@@ -108,7 +108,7 @@ DAOs: `ItemDao`, `PendingOpDao` (com `updatePayload`, usado pela coalescência),
 
 Operações sobre um id inexistente não fazem nada. `add` devolve `false` (sem alterar nada) se ainda não houver lista ativa ou utilizador.
 
-**Lista ativa:** guardada em `sync_meta` na chave `activeListId` (`ActiveListProvider`). `ListRepository.ensureActiveList()` vai buscar a primeira lista ao servidor (`GET lists?sort=created&perPage=1`) só se a chave ainda não existir. `SessionViewModel` chama-o quando há sessão (logo após o login, que já exige rede, e em arranques seguintes se a tentativa falhou). Depois disso o id é local e `add` funciona sempre offline. Até haver lista, `observeItems()` emite lista vazia e `add` devolve `false`.
+**Listas conhecidas:** os ids guardam-se em `sync_meta` (`ActiveListProvider`, uma chave por `ListKind`): `activeListId` = Compras (nome mantido de antes de haver duas listas, para as instalações existentes) e `tasksListId` = Tarefas. `ListRepository.ensureLists()` pede `GET lists?sort=created&perPage=20` só se faltar algum id: a mais antiga é Compras e a seguinte (a mais antiga que não seja Compras) é Tarefas; um id guardado nunca é substituído. `SessionViewModel` chama-o quando há sessão e o `Reconciler` chama-o em cada pull enquanto faltar algum id. Uma lista de Tarefas inexistente no servidor não é erro: o pull faz-se só às listas conhecidas. Depois disto os ids são locais e `add` funciona sempre offline. Até a lista existir, `observeItems(kind)` emite lista vazia e `add(kind, …)` devolve `false` (a UI desativa a adição, `ListRepository.hasList(kind)`). As operações do repositório recebem o `ListKind` explicitamente: não há "lista selecionada" global.
 
 ### DTO (rede)
 

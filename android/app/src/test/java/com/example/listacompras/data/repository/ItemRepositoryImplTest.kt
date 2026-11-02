@@ -1,5 +1,6 @@
 package com.example.listacompras.data.repository
 
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.data.local.dao.ItemDao
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.local.entity.ItemEntity
@@ -46,7 +47,7 @@ class ItemRepositoryImplTest {
         newId = { ids.next() },
     )
 
-    private suspend fun addMilk() = repo.add("Leite", "2", Category.DAIRY).also { assertTrue(it) }
+    private suspend fun addMilk() = repo.add(ListKind.SHOPPING, "Leite", "2", Category.DAIRY).also { assertTrue(it) }
 
     @Test
     fun `add stores a pending item and a CREATE op with the full body`() = runTest {
@@ -70,7 +71,7 @@ class ItemRepositoryImplTest {
 
     @Test
     fun `add omits blank quantity and missing category from the body`() = runTest {
-        repo.add("Pão", "  ", null)
+        repo.add(ListKind.SHOPPING, "Pão", "  ", null)
 
         val op = opDao.ops.single()
         assertEquals(
@@ -83,10 +84,10 @@ class ItemRepositoryImplTest {
     @Test
     fun `add without active list or user changes nothing`() = runTest {
         activeList.id.value = null
-        assertFalse(repo.add("Leite"))
+        assertFalse(repo.add(ListKind.SHOPPING, "Leite"))
         activeList.id.value = "list1"
         userId = null
-        assertFalse(repo.add("Leite"))
+        assertFalse(repo.add(ListKind.SHOPPING, "Leite"))
 
         assertTrue(itemDao.items.value.isEmpty())
         assertTrue(opDao.ops.isEmpty())
@@ -144,13 +145,13 @@ class ItemRepositoryImplTest {
 
     @Test
     fun `clearChecked deletes only checked items and queues one DELETE each`() = runTest {
-        repo.add("A"); repo.add("B"); repo.add("C")
+        repo.add(ListKind.SHOPPING, "A"); repo.add(ListKind.SHOPPING, "B"); repo.add(ListKind.SHOPPING, "C")
         val (a, b, c) = itemDao.items.value.keys.toList()
         repo.setChecked(a, true)
         repo.setChecked(c, true)
         opDao.ops.clear()
 
-        repo.clearChecked()
+        repo.clearChecked(ListKind.SHOPPING)
 
         assertEquals(setOf(b), itemDao.items.value.keys)
         assertEquals(listOf(OpType.DELETE, OpType.DELETE), opDao.ops.map { it.type })
@@ -160,7 +161,7 @@ class ItemRepositoryImplTest {
     @Test
     fun `each effective write requests a sync and no-ops or failed adds do not`() = runTest {
         activeList.id.value = null
-        repo.add("x")
+        repo.add(ListKind.SHOPPING, "x")
         activeList.id.value = "list1"
         assertEquals(0, scheduler.requests)
 
@@ -172,12 +173,12 @@ class ItemRepositoryImplTest {
 
         repo.setChecked("missing", true)
         repo.delete("missing")
-        repo.clearChecked()
+        repo.clearChecked(ListKind.SHOPPING)
         assertEquals(3, scheduler.requests)
 
-        repo.add("A")
+        repo.add(ListKind.SHOPPING, "A")
         repo.setChecked(itemDao.items.value.keys.single(), true)
-        repo.clearChecked()
+        repo.clearChecked(ListKind.SHOPPING)
         assertEquals(6, scheduler.requests)
     }
 
@@ -187,7 +188,7 @@ class ItemRepositoryImplTest {
         itemDao.upsert(entity("x2", category = "from_the_future", createdAt = 2))
         itemDao.upsert(entity("x3", category = "", createdAt = 3))
 
-        val items = repo.observeItems().first()
+        val items = repo.observeItems(ListKind.SHOPPING).first()
 
         assertEquals(listOf(Category.DAIRY, null, null), items.map { it.category })
         assertEquals(Instant.ofEpochMilli(1_000), items.first().updatedAt)
@@ -198,7 +199,7 @@ class ItemRepositoryImplTest {
         activeList.id.value = null
         itemDao.upsert(entity("x1", category = null))
 
-        assertTrue(repo.observeItems().first().isEmpty())
+        assertTrue(repo.observeItems(ListKind.SHOPPING).first().isEmpty())
     }
 
     private fun entity(id: String, category: String?, createdAt: Long = 1) = ItemEntity(
@@ -206,4 +207,31 @@ class ItemRepositoryImplTest {
         addedBy = "user1", checkedBy = null, createdAt = createdAt, updatedAt = 1_000,
         syncState = SyncState.SYNCED,
     )
+
+    @Test
+    fun `tasks and shopping items are kept apart`() = runTest {
+        activeList.tasksId.value = "tasks1"
+        repo.add(ListKind.SHOPPING, "Leite")
+        repo.add(ListKind.TASKS, "Limpar grelhador")
+
+        assertEquals(listOf("Leite"), repo.observeItems(ListKind.SHOPPING).first().map { it.name })
+        assertEquals(listOf("Limpar grelhador"), repo.observeItems(ListKind.TASKS).first().map { it.name })
+    }
+
+    @Test
+    fun `clearing the checked tasks leaves shopping alone`() = runTest {
+        activeList.tasksId.value = "tasks1"
+        repo.add(ListKind.SHOPPING, "Leite")
+        repo.add(ListKind.TASKS, "Limpar grelhador")
+        itemDao.items.value.keys.forEach { repo.setChecked(it, true) }
+
+        repo.clearChecked(ListKind.TASKS)
+
+        assertEquals(listOf("Leite"), itemDao.items.value.values.map { it.name })
+    }
+
+    @Test
+    fun `adding a task is refused while the tasks list is unknown`() = runTest {
+        assertFalse(repo.add(ListKind.TASKS, "Limpar grelhador"))
+    }
 }

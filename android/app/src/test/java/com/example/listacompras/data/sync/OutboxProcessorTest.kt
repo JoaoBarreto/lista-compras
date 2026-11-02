@@ -1,5 +1,6 @@
 package com.example.listacompras.data.sync
 
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.remote.TokenProvider
@@ -44,7 +45,7 @@ class OutboxProcessorTest {
     )
 
     private suspend fun addItem(name: String): String {
-        repo.add(name)
+        repo.add(ListKind.SHOPPING, name)
         return itemDao.items.value.keys.last()
     }
 

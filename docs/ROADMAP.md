@@ -107,6 +107,7 @@ Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas,
 - [ ] **8.2** Cliente: conhecer as duas listas, com a lista selecionada
   - Guardar os ids das duas listas em `sync_meta`; `add`, `observeItems` e `clearChecked` usam a lista selecionada; o pull completo e o realtime tratam as duas listas; se "Tarefas" ainda não existir no servidor, tentar de novo ao ligar
   - ✔ Testes unitários: itens de cada lista não se misturam; o pull não apaga os itens da outra lista; eventos de realtime de ambas são aplicados; sem a lista "Tarefas" a app de compras funciona como antes
+  - Estado: implementado (`ListKind`, `ActiveListProvider` por tipo, `ensureLists`, pull e realtime sobre todas as listas conhecidas, `ShoppingViewModel` usa `SHOPPING`); 146 testes. Por verificar no telemóvel: nada deve mudar na lista de Compras.
 - [ ] **8.3** Interface: dois separadores e seleção da lista
   - ✔ Abre em Compras; trocar de separador mostra a outra lista sem perder o scroll nem o texto do campo de adição; funciona offline
 - [ ] **8.4** Texto e aspeto das tarefas

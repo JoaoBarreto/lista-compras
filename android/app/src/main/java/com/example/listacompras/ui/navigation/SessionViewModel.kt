@@ -38,7 +38,7 @@ class SessionViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .filterNotNull()
                 .collect {
-                    listRepository.ensureActiveList()
+                    listRepository.ensureLists()
                     // Restarts sending after a login (e.g. a run that ended because the session was lost).
                     syncScheduler.requestSync()
                 }

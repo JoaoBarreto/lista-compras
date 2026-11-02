@@ -3,6 +3,7 @@ package com.example.listacompras.ui.shopping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.listacompras.domain.model.SyncStatus
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.repository.ItemRepository
 import com.example.listacompras.domain.repository.ListRepository
 import com.example.listacompras.domain.repository.SyncStatusProvider
@@ -26,10 +27,10 @@ class ShoppingViewModel @Inject constructor(
 
     // The repository already orders items (creation time, then id); partitioning keeps that order.
     val uiState: StateFlow<ShoppingUiState> = combine(
-        itemRepository.observeItems(),
+        itemRepository.observeItems(KIND),
         // Items must not wait for the first status (it depends on network callbacks).
         syncStatusProvider.status.onStart { emit(SyncStatus.Syncing) },
-        listRepository.hasActiveList,
+        listRepository.hasList(KIND),
     ) { items, status, hasList ->
         val (bought, toBuy) = items.partition { it.checked }
         ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, canAdd = hasList, isLoading = false)
@@ -40,7 +41,7 @@ class ShoppingViewModel @Inject constructor(
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
-            if (listRepository.hasActiveList.first()) itemRepository.add(trimmed)
+            if (listRepository.hasList(KIND).first()) itemRepository.add(KIND, trimmed)
         }
     }
 
@@ -58,6 +59,11 @@ class ShoppingViewModel @Inject constructor(
     }
 
     fun onClearChecked() {
-        viewModelScope.launch { itemRepository.clearChecked() }
+        viewModelScope.launch { itemRepository.clearChecked(KIND) }
+    }
+
+    private companion object {
+        // The tabs arrive with 8.3; until then the screen shows the shopping list only.
+        val KIND = ListKind.SHOPPING
     }
 }
