@@ -107,13 +107,13 @@ Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas,
 - [x] **8.2** Cliente: conhecer as duas listas, com a lista selecionada
   - Guardar os ids das duas listas em `sync_meta`; `add`, `observeItems` e `clearChecked` usam a lista selecionada; o pull completo e o realtime tratam as duas listas; se "Tarefas" ainda não existir no servidor, tentar de novo ao ligar
   - ✔ Testes unitários: itens de cada lista não se misturam; o pull não apaga os itens da outra lista; eventos de realtime de ambas são aplicados; sem a lista "Tarefas" a app de compras funciona como antes
-  - Verificado por testes unitários em 2026-11-02 (146 testes). A confirmação no telemóvel de que as Compras não mudam faz-se na 8.3, com uma release `versionCode` 3 instalada por cima da v2.
-- [ ] **8.3** Interface: dois separadores e seleção da lista
+  - Verificado por testes unitários em 2026-11-02 (146 testes) e no telemóvel com a release v3 (as Compras não mudaram).
+- [x] **8.3** Interface: dois separadores e seleção da lista
   - ✔ Abre em Compras; trocar de separador mostra a outra lista sem perder o scroll nem o texto do campo de adição; funciona offline
-  - Estado: implementado; testes unitários passam (147). Por verificar no telemóvel com a release `versionCode` 3 por cima da v2.
-- [ ] **8.4** Texto e aspeto das tarefas
+  - Verificado no telemóvel em 2026-11-02 (release v3 instalada por cima da v2, um telemóvel).
+- [x] **8.4** Texto e aspeto das tarefas
   - ✔ "Por fazer / Feitas / Limpar feitas", sem quantidade, estados vazios próprios, tudo em `strings.xml`
-  - Estado: implementado; testes unitários passam (147). Por verificar no telemóvel com a release `versionCode` 3 por cima da v2.
+  - Verificado no telemóvel em 2026-11-02 (release v3 instalada por cima da v2, um telemóvel).
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 
