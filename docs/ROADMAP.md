@@ -67,10 +67,10 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
 - [x] **5.2** Ecrã da lista: duas secções, campo fixo de adição rápida, toque para marcar, deslizar para apagar, "Limpar comprados"
   - ✔ Funciona com avião ligado; teclado não tapa o campo de adição
   - Verificado no telemóvel em 2026-11-02: adição offline, teclado, sincronização depois de reconectar. Já é possível o teste de duas instâncias da 4.3.
-- [ ] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
+- [x] **5.3** Indicador de sincronização e mensagem "Verifica se o Tailscale está ligado" quando offline
   - ✔ Visível e compreensível nos quatro estados
   - Substituir os restos de diagnóstico da 4.3/4.4: o coletor `SyncStatus` temporário no `MainActivity` e o log dos valores brutos no `RealtimeModule` (`BuildConfig.DEBUG`) pelo indicador visível; chamar `SyncStatusProvider.acknowledgeErrors()` ao tocar no erro.
-  - Estado: implementado (`SyncStatusLabel` sob o título; faixa para Offline e Erro; toque na faixa de erro chama `acknowledgeErrors()`); restos de diagnóstico removidos. Por verificar no telemóvel nos quatro estados.
+  - Verificado no telemóvel em 2026-11-02.
 - [ ] **5.4** Estados vazios, modo escuro, acessibilidade básica (content descriptions, alvos de toque ≥ 48dp)
 
 ## Fase 6 · Polimento e entrega
