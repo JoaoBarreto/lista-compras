@@ -45,7 +45,7 @@ class AuthRepositoryImplTest {
         tokenStore = TokenStore(PreferenceDataStoreFactory.create(scope = scope) { file }, FakeTokenCipher(), scope)
         val client = OkHttpClient.Builder().addInterceptor(AuthInterceptor(tokenStore)).build()
         val api = PocketBaseApiFactory.create(server.url("/").toString(), client)
-        repository = AuthRepositoryImpl(api, tokenStore, Dispatchers.IO)
+        repository = AuthRepositoryImpl(api, tokenStore, Dispatchers.IO, loginTimeout = Duration.ofMillis(300))
     }
 
     @After
@@ -91,6 +91,13 @@ class AuthRepositoryImplTest {
         server.enqueue(MockResponse.Builder().code(500).build())
 
         assertEquals(LoginResult.Failure(LoginError.Unknown), repository.login("a@b.pt", "x"))
+    }
+
+    @Test
+    fun aServerThatNeverAnswersEndsInNetworkErrorAfterTheTimeout() = runBlocking {
+        server.enqueue(MockResponse.Builder().headersDelay(10, java.util.concurrent.TimeUnit.SECONDS).build())
+
+        assertEquals(LoginResult.Failure(LoginError.Network), repository.login("a@b.pt", "x"))
     }
 
     @Test

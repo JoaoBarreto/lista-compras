@@ -12,7 +12,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import retrofit2.HttpException
 import java.io.IOException
 import java.time.Clock
@@ -23,6 +25,7 @@ class AuthRepositoryImpl(
     private val tokenStore: TokenStore,
     private val ioDispatcher: CoroutineDispatcher,
     private val clock: Clock = Clock.systemUTC(),
+    private val loginTimeout: Duration = LOGIN_TIMEOUT,
 ) : AuthRepository {
 
     override val authState: Flow<AuthState> = tokenStore.state
@@ -30,7 +33,11 @@ class AuthRepositoryImpl(
     override suspend fun login(email: String, password: String): LoginResult =
         withContext(ioDispatcher) {
             try {
-                val response = api.login(LoginRequest(email.trim(), password))
+                // Bounded as a whole: with a VPN up and no real network, connection attempts can
+                // hang for a long time and the login screen would show its spinner meanwhile.
+                val response = withTimeout(loginTimeout.toMillis()) {
+                    api.login(LoginRequest(email.trim(), password))
+                }
                 val session = UserSession(response.record.id, response.record.name)
                 tokenStore.save(response.token, session)
                 LoginResult.Success(session)
@@ -40,6 +47,8 @@ class AuthRepositoryImpl(
                     if (e.code() == 400 || e.code() == 401) LoginError.InvalidCredentials else LoginError.Unknown,
                 )
             } catch (_: IOException) {
+                LoginResult.Failure(LoginError.Network)
+            } catch (_: TimeoutCancellationException) {
                 LoginResult.Failure(LoginError.Network)
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
@@ -71,6 +80,7 @@ class AuthRepositoryImpl(
     override suspend fun logout() = tokenStore.clear()
 
     private companion object {
+        val LOGIN_TIMEOUT: Duration = Duration.ofSeconds(15)
         /** Tokens last days; refreshing when under a week is left is cheap and keeps both phones logged in. */
         val REFRESH_THRESHOLD: Duration = Duration.ofDays(7)
         val REJECTED = setOf(400, 401, 403, 404)
