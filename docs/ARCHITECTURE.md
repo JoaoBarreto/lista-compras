@@ -33,7 +33,7 @@ ui  ──►  domain  ◄──  data
 ## Fluxo de dados
 
 ### Leitura
-`ItemRepository.observeItems()` devolve `Flow<List<ShoppingItem>>` vindo do Room. O ViewModel transforma em `UiState` (separando por comprar / comprados).
+`ItemRepository.observeItems()` devolve `Flow<List<ShoppingItem>>` vindo do Room. O ViewModel transforma em `UiState` (separando por comprar / comprados). `ShoppingViewModel` (`ui/shopping`) combina `observeItems()` com `SyncStatusProvider.status` num único `StateFlow<ShoppingUiState>` (`toBuy`, `bought`, `syncStatus`, `isLoading`, este último `true` até o Room emitir pela primeira vez). Mantém a ordem do repositório (`createdAt, id`); um `add` recusado (sem lista/utilizador) é ignorado por agora.
 
 ### Escrita (ex.: marcar como comprado)
 1. ViewModel chama `repository.setChecked(id, true)`.

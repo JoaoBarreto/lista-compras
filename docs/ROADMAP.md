@@ -62,7 +62,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Verificado no telemóvel em 2026-10-30: modo avião ligado → Offline em ~2 ms; desligado → A sincronizar até ao `pull done` e só então Sincronizado.
 
 ## Fase 5 · Interface
-- [ ] **5.1** `ShoppingViewModel` + `UiState` (por comprar / comprados / estado de sync)
+- [x] **5.1** `ShoppingViewModel` + `UiState` (por comprar / comprados / estado de sync)
   - ✔ Testes com Turbine
 - [ ] **5.2** Ecrã da lista: duas secções, campo fixo de adição rápida, toque para marcar, deslizar para apagar, "Limpar comprados"
   - ✔ Funciona com avião ligado; teclado não tapa o campo de adição

@@ -24,7 +24,7 @@ Usar `gradle/libs.versions.toml` (version catalog). **Confirmar a última versã
 | Background | `work-runtime-ktx` 2.12.0 (`androidx.hilt:hilt-work`/`hilt-compiler` 1.4.0; versões estáveis confirmadas no Google Maven) |
 | Preferências | `datastore-preferences` |
 | Datas | `java.time` (core library desugaring se min SDK < 26 vier a ser necessário) |
-| Testes | JUnit, `kotlinx-coroutines-test`, Turbine, MockWebServer, `room-testing`, `androidx.compose.ui:ui-test-junit4` |
+| Testes | JUnit, `kotlinx-coroutines-test`, Turbine 1.2.1, MockWebServer, `room-testing`, `androidx.compose.ui:ui-test-junit4` |
 
 Plugins: `com.android.application`, `O AGP 9 inclui o Kotlin embutido; não aplicar o plugin kotlin.android.`, `org.jetbrains.kotlin.plugin.compose`, `org.jetbrains.kotlin.plugin.serialization`, `com.google.devtools.ksp`, `com.google.dagger.hilt.android`.
 
