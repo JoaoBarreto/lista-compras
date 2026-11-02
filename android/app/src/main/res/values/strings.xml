@@ -11,7 +11,8 @@
     <string name="login_error_unknown">Ocorreu um erro inesperado. Tenta novamente.</string>
     <string name="login_button_enter">Entrar</string>
 
-    <string name="shopping_title">Compras</string>
+    <string name="tab_shopping">Compras</string>
+    <string name="tab_tasks">Tarefas</string>
     <string name="shopping_section_to_buy">Por comprar</string>
     <string name="shopping_section_bought">Comprados</string>
     <string name="shopping_clear_bought">Limpar comprados</string>
@@ -30,4 +31,10 @@
     <string name="shopping_all_bought">Tudo comprado!</string>
     <string name="shopping_add_waiting_list">A obter a lista do servidor…</string>
     <string name="shopping_waiting_list">A obter a lista do servidor. Isto só é preciso na primeira vez e requer ligação ao servidor.</string>
+    <string name="tasks_section_open">Por fazer</string>
+    <string name="tasks_section_done">Feitas</string>
+    <string name="tasks_clear_done">Limpar feitas</string>
+    <string name="tasks_add_label">Adicionar tarefa</string>
+    <string name="tasks_empty">Ainda não há tarefas. Escreve em baixo a primeira.</string>
+    <string name="tasks_all_done">Tudo feito!</string>
 </resources>

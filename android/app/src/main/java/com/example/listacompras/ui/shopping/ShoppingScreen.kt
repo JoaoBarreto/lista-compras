@@ -23,29 +23,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.listacompras.R
 
-@Composable
-fun ShoppingRoute(
-    onLogout: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ShoppingViewModel = hiltViewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    ShoppingScreen(
-        state = state,
-        onAdd = viewModel::onAdd,
-        onCheckedChange = viewModel::onCheckedChange,
-        onDelete = viewModel::onDelete,
-        onClearChecked = viewModel::onClearChecked,
-        onErrorAcknowledged = viewModel::onErrorAcknowledged,
-        onLogout = onLogout,
-        modifier = modifier,
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingScreen(
     state: ShoppingUiState,
+    texts: ShoppingTexts,
+    tabs: @Composable () -> Unit,
     onAdd: (String) -> Unit,
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
@@ -72,7 +55,7 @@ fun ShoppingScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text(stringResource(R.string.shopping_title))
+                            Text(stringResource(R.string.app_name))
                             SyncStatusLabel(state.syncStatus)
                         }
                     },
@@ -82,10 +65,11 @@ fun ShoppingScreen(
                         }
                     },
                 )
+                tabs()
                 SyncBanner(state.syncStatus, onErrorClick = onErrorAcknowledged)
             }
         },
-        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }, enabled = state.canAdd) },
+        bottomBar = { AddItemBar(onAdd = { scrollToNewItem = true; onAdd(it) }, label = texts.addLabel, enabled = state.canAdd) },
     ) { innerPadding ->
         // Nothing until the local database has answered, so the empty message does not flash.
         if (state.isLoading) return@Scaffold
@@ -96,15 +80,15 @@ fun ShoppingScreen(
         ) {
             if (state.toBuy.isEmpty() && state.bought.isEmpty()) {
                 item(key = "empty") { EmptyMessage(
-                        stringResource(if (state.canAdd) R.string.shopping_empty else R.string.shopping_waiting_list),
+                        if (state.canAdd) texts.empty else texts.waitingList,
                         Modifier.fillParentMaxSize(),
                     ) }
             }
             if (state.toBuy.isEmpty() && state.bought.isNotEmpty()) {
-                item(key = "all-bought") { EmptyMessage(stringResource(R.string.shopping_all_bought)) }
+                item(key = "all-bought") { EmptyMessage(texts.allDone) }
             }
             if (state.toBuy.isNotEmpty()) {
-                item(key = "header-to-buy") { SectionHeader(stringResource(R.string.shopping_section_to_buy)) }
+                item(key = "header-to-buy") { SectionHeader(texts.sectionOpen) }
                 items(state.toBuy, key = { it.id }) { item ->
                     SwipeableRow(item, onCheckedChange, onDelete)
                 }
@@ -112,8 +96,8 @@ fun ShoppingScreen(
             if (state.bought.isNotEmpty()) {
                 item(key = "header-bought") {
                     SectionHeader(
-                        title = stringResource(R.string.shopping_section_bought),
-                        action = stringResource(R.string.shopping_clear_bought),
+                        title = texts.sectionDone,
+                        action = texts.clearDone,
                         onAction = onClearChecked,
                     )
                 }

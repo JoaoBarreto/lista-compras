@@ -7,6 +7,9 @@ import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.repository.ItemRepository
 import com.example.listacompras.domain.repository.ListRepository
 import com.example.listacompras.domain.repository.SyncStatusProvider
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,33 +18,34 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** Turns the local items and the sync status into one [ShoppingUiState]; UI events come in as functions. */
-@HiltViewModel
-class ShoppingViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = ShoppingViewModel.Factory::class)
+class ShoppingViewModel @AssistedInject constructor(
+    @Assisted private val kind: ListKind,
     private val itemRepository: ItemRepository,
     private val listRepository: ListRepository,
     private val syncStatusProvider: SyncStatusProvider,
 ) : ViewModel() {
 
     // The repository already orders items (creation time, then id); partitioning keeps that order.
+    // Lazily (never stopped): the hidden tab keeps its state, and the scroll position that goes with it.
     val uiState: StateFlow<ShoppingUiState> = combine(
-        itemRepository.observeItems(KIND),
+        itemRepository.observeItems(kind),
         // Items must not wait for the first status (it depends on network callbacks).
         syncStatusProvider.status.onStart { emit(SyncStatus.Syncing) },
-        listRepository.hasList(KIND),
+        listRepository.hasList(kind),
     ) { items, status, hasList ->
         val (bought, toBuy) = items.partition { it.checked }
         ShoppingUiState(toBuy = toBuy, bought = bought, syncStatus = status, canAdd = hasList, isLoading = false)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ShoppingUiState())
+    }.stateIn(viewModelScope, SharingStarted.Lazily, ShoppingUiState())
 
     /** Blank names are ignored, and so is anything while there is no list yet (the UI disables adding then). */
     fun onAdd(name: String) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
-            if (listRepository.hasList(KIND).first()) itemRepository.add(KIND, trimmed)
+            if (listRepository.hasList(kind).first()) itemRepository.add(kind, trimmed)
         }
     }
 
@@ -59,11 +63,11 @@ class ShoppingViewModel @Inject constructor(
     }
 
     fun onClearChecked() {
-        viewModelScope.launch { itemRepository.clearChecked(KIND) }
+        viewModelScope.launch { itemRepository.clearChecked(kind) }
     }
 
-    private companion object {
-        // The tabs arrive with 8.3; until then the screen shows the shopping list only.
-        val KIND = ListKind.SHOPPING
+    @AssistedFactory
+    interface Factory {
+        fun create(kind: ListKind): ShoppingViewModel
     }
 }

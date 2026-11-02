@@ -30,14 +30,18 @@ class ShoppingViewModelTest {
     private class FakeItemRepository : ItemRepository {
         val items = MutableStateFlow<List<ShoppingItem>>(emptyList())
         val calls = mutableListOf<String>()
-        override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> = items
+        val observed = mutableListOf<ListKind>()
+        override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> {
+            observed += kind
+            return items
+        }
         override suspend fun add(kind: ListKind, name: String, quantity: String?, category: Category?): Boolean {
-            calls += "add:$name"
+            calls += "add:$kind:$name"
             return true
         }
         override suspend fun setChecked(id: String, checked: Boolean) { calls += "check:$id:$checked" }
         override suspend fun delete(id: String) { calls += "delete:$id" }
-        override suspend fun clearChecked(kind: ListKind) { calls += "clear" }
+        override suspend fun clearChecked(kind: ListKind) { calls += "clear:$kind" }
     }
 
     private class FakeSyncStatusProvider : SyncStatusProvider {
@@ -48,7 +52,11 @@ class ShoppingViewModelTest {
 
     private class FakeListRepository : ListRepository {
         val has = MutableStateFlow(true)
-        override fun hasList(kind: ListKind): Flow<Boolean> = has
+        val asked = mutableListOf<ListKind>()
+        override fun hasList(kind: ListKind): Flow<Boolean> {
+            asked += kind
+            return has
+        }
         override suspend fun ensureLists() = has.value
     }
 
@@ -70,7 +78,7 @@ class ShoppingViewModelTest {
     @Test
     fun `starts loading then splits items keeping repository order`() = runTest {
         repo.items.value = listOf(item("a"), item("b", checked = true), item("c"), item("d", checked = true))
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.uiState.test {
             val state = expectMostRecentItem()
@@ -84,6 +92,7 @@ class ShoppingViewModelTest {
     fun `is loading until the repository emits`() = runTest {
         val source = MutableSharedFlow<List<ShoppingItem>>()
         val vm = ShoppingViewModel(
+            ListKind.SHOPPING,
             object : ItemRepository by repo {
                 override fun observeItems(kind: ListKind): Flow<List<ShoppingItem>> = source
             },
@@ -104,7 +113,7 @@ class ShoppingViewModelTest {
 
     @Test
     fun `reacts to item and sync status changes`() = runTest {
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.uiState.test {
             assertEquals(emptyList<ShoppingItem>(), expectMostRecentItem().toBuy)
@@ -124,28 +133,28 @@ class ShoppingViewModelTest {
 
     @Test
     fun `blank names are ignored and others are trimmed`() = runTest {
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.onAdd("   ")
         vm.onAdd("  leite ")
 
-        assertEquals(listOf("add:leite"), repo.calls)
+        assertEquals(listOf("add:SHOPPING:leite"), repo.calls)
     }
 
     @Test
     fun `events call the repository`() = runTest {
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.onCheckedChange("a", true)
         vm.onDelete("b")
         vm.onClearChecked()
 
-        assertEquals(listOf("check:a:true", "delete:b", "clear"), repo.calls)
+        assertEquals(listOf("check:a:true", "delete:b", "clear:SHOPPING"), repo.calls)
     }
 
     @Test
     fun `acknowledging the error is forwarded to the status provider`() = runTest {
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.onErrorAcknowledged()
 
@@ -155,7 +164,7 @@ class ShoppingViewModelTest {
     @Test
     fun `canAdd follows the active list and adding is ignored without one`() = runTest {
         lists.has.value = false
-        val vm = ShoppingViewModel(repo, lists, sync)
+        val vm = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
 
         vm.uiState.test {
             assertEquals(false, expectMostRecentItem().canAdd)
@@ -167,7 +176,22 @@ class ShoppingViewModelTest {
             assertEquals(true, awaitItem().canAdd)
 
             vm.onAdd("leite")
-            assertEquals(listOf("add:leite"), repo.calls)
+            assertEquals(listOf("add:SHOPPING:leite"), repo.calls)
         }
+    }
+
+    @Test
+    fun `a tasks view model reads and writes the tasks list`() = runTest {
+        val vm = ShoppingViewModel(ListKind.TASKS, repo, lists, sync)
+
+        vm.uiState.test {
+            expectMostRecentItem()
+            vm.onAdd("Limpar grelhador")
+            vm.onClearChecked()
+        }
+
+        assertEquals(listOf(ListKind.TASKS), repo.observed)
+        assertEquals(setOf(ListKind.TASKS), lists.asked.toSet())
+        assertEquals(listOf("add:TASKS:Limpar grelhador", "clear:TASKS"), repo.calls)
     }
 }

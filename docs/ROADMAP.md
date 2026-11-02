@@ -110,8 +110,10 @@ Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas,
   - Verificado por testes unitários em 2026-11-02 (146 testes). A confirmação no telemóvel de que as Compras não mudam faz-se na 8.3, com uma release `versionCode` 3 instalada por cima da v2.
 - [ ] **8.3** Interface: dois separadores e seleção da lista
   - ✔ Abre em Compras; trocar de separador mostra a outra lista sem perder o scroll nem o texto do campo de adição; funciona offline
+  - Estado: implementado; testes unitários passam (147). Por verificar no telemóvel com a release `versionCode` 3 por cima da v2.
 - [ ] **8.4** Texto e aspeto das tarefas
   - ✔ "Por fazer / Feitas / Limpar feitas", sem quantidade, estados vazios próprios, tudo em `strings.xml`
+  - Estado: implementado; testes unitários passam (147). Por verificar no telemóvel com a release `versionCode` 3 por cima da v2.
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 

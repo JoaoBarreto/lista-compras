@@ -3,6 +3,7 @@ package com.example.listacompras.ui.shopping
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.model.ShoppingItem
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.model.SyncStatus
@@ -22,6 +23,8 @@ private fun PreviewScreen(state: ShoppingUiState) {
     ListaComprasTheme {
         ShoppingScreen(
             state = state,
+            texts = shoppingTexts(ListKind.SHOPPING),
+            tabs = {},
             onAdd = {}, onCheckedChange = { _, _ -> }, onDelete = {}, onClearChecked = {},
             onErrorAcknowledged = {}, onLogout = {},
         )

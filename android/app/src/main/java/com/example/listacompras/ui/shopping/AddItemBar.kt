@@ -31,6 +31,7 @@ import com.example.listacompras.R
 @Composable
 fun AddItemBar(
     onAdd: (String) -> Unit,
+    label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
@@ -54,7 +55,7 @@ fun AddItemBar(
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                label = { Text(stringResource(R.string.shopping_add_label)) },
+                label = { Text(label) },
                 singleLine = true,
                 supportingText = if (enabled) null else {
                     { Text(stringResource(R.string.shopping_add_waiting_list)) }
