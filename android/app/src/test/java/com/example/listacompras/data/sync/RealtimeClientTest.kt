@@ -142,7 +142,7 @@ class RealtimeClientTest {
 
     @Test
     fun `after the stream closes it reconnects with a new client id and pulls again`() {
-        runClient { awaitUntil { posts.size >= 2 } }
+        runClient { awaitUntil { posts.size >= 2 && pulls.get() >= 2 } }
 
         assertEquals(listOf("c1", "c2"), posts.take(2).map { Regex("\"clientId\":\"(\\w+)\"").find(it.body)!!.groupValues[1] })
         assertTrue(pulls.get() >= 2)

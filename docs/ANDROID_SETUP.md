@@ -5,7 +5,7 @@
 Android Studio → New Project → **Empty Activity** (Compose) em `android/`.
 
 - Linguagem: Kotlin; build config: Kotlin DSL (`build.gradle.kts`)
-- Package: `com.example.listacompras` (confirmar/alterar)
+- `applicationId`: `com.joaobarreto.listacompras` (builds debug: `.debug` no fim, para coexistirem com a release). `namespace` e pacotes de código: `com.example.listacompras`.
 - Min SDK: 26 · Target/Compile SDK: última estável
 
 ## Dependências permitidas
@@ -104,3 +104,17 @@ Em alternativa, enviar o `.apk` ao outro telemóvel e permitir "instalar de font
 ### Autonomia e bateria (Samsung)
 
 Se o sync em segundo plano falhar, verificar em Definições → Bateria que a app não está em "dormir"/otimização agressiva.
+
+## Build release assinada
+
+- Keystore: `/var/home/behonder/keystores/lista-compras-release.jks` (fora do repositório; chave RSA 4096, validade ~27 anos). Palavras-passe em `android/keystore.properties` (ignorado pelo git; chaves `storeFile`, `storePassword`, `keyAlias`, `keyPassword`).
+- **Fazer cópia de segurança da keystore e do `keystore.properties`**, como os backups do servidor. Sem a keystore não é possível atualizar a app por cima: só desinstalando (perde dados locais e login).
+- Sem `keystore.properties`, `assembleDebug` funciona e `assembleRelease` falha com uma mensagem clara.
+- Cada nova versão: subir `versionCode` (e `versionName`) em `app/build.gradle.kts`.
+- Sem minificação (R8) na release: app instalada à mão por duas pessoas, e o R8 pode partir serialização/Retrofit em execução sem que os testes deem por isso.
+- Comando e resultado:
+  ```bash
+  ./gradlew assembleRelease
+  adb install -r app/build/outputs/apk/release/app-release.apk
+  ```
+- Primeira instalação: desinstalar a app debug antiga (`com.example.listacompras`); esperar que o estado seja "Sincronizado" antes, para não perder alterações pendentes.

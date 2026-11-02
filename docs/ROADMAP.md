@@ -93,6 +93,7 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
 - [ ] **6.3** Build release assinada e instalação nos dois telemóveis
   - ✔ Atualização por cima mantém os dados
+  - Estado: implementado (`applicationId` `com.joaobarreto.listacompras`, assinatura por `keystore.properties`, APK em `android/app/build/outputs/apk/release/app-release.apk`, assinatura confirmada com `apksigner`). Por verificar: instalar nos dois telemóveis e atualizar por cima com `versionCode` 2.
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 
