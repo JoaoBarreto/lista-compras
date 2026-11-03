@@ -1,15 +1,18 @@
 # Life Manager
 
-App Android pessoal do casal (antes "Lista de Compras"): **Compras**, **Tarefas da casa** e, em desenvolvimento (Fase 9), **calendário** com eventos coloridos por tipo, **notificações** e quantidades opcionais. Ver [DECISIONS](docs/DECISIONS.md). Funciona **offline** e sincroniza com um servidor [PocketBase](https://pocketbase.io) próprio, acessível por [Tailscale](https://tailscale.com).
+App Android pessoal do casal (antes "Lista de Compras"): **Compras**, **Tarefas da casa** e **Calendário** com eventos coloridos por tipo, lembretes e avisos. Ver [DECISIONS](docs/DECISIONS.md). Funciona **offline** e sincroniza com um servidor [PocketBase](https://pocketbase.io) próprio, acessível por [Tailscale](https://tailscale.com).
 
 ## Funcionalidades
 
-- Duas listas fixas, em dois separadores: **Compras** (abre por omissão) e **Tarefas** ("Limpar grelhador", "Arrancar a relva"…).
-- Adição rápida de itens, toque para marcar, deslizar para apagar, "Limpar comprados / feitas".
+- Três separadores: **Compras** (abre por omissão), **Tarefas** ("Limpar grelhador", "Arrancar a relva"…) e **Calendário**.
+- Adição rápida de itens, toque para marcar, deslizar para apagar, "Limpar comprados / feitas". Quantidade opcional nas Compras.
+- **Calendário:** grelha mensal (segunda-feira primeiro) com pontos nas cores dos tipos de evento, e agenda do mês por baixo. Eventos com hora ou de dia inteiro, notas, e tipos criados e editados na app (nome e cor; os iniciais são Família, Veronica e João).
+- **Lembretes de eventos:** à hora, 1 hora antes ou de 1 a 5 dias antes, com um alarme exato local que sobrevive a atualizações e a reinícios. Os eventos de dia inteiro avisam às 09:00.
+- **Avisos:** notificação quando o outro adiciona itens às Compras ou cria um evento, verificada em segundo plano cerca de cada 15 minutos (sem FCM, sem serviço em primeiro plano). Interruptores nas Definições.
 - **Offline-first:** a interface lê sempre da base de dados local. Tudo o que se faz sem rede fica numa fila e é enviado quando há ligação, sem duplicar itens.
 - **Tempo real:** o que uma pessoa altera aparece no outro telemóvel em segundos (Server-Sent Events).
 - Indicador de sincronização (Sincronizado / A sincronizar / Offline / Com erros), com o aviso para verificar o Tailscale quando não há ligação.
-- Modo escuro, tema dinâmico, suporte a leitores de ecrã (TalkBack) e ícone adaptativo/monocromático.
+- Modo escuro, tema dinâmico, suporte a leitores de ecrã (TalkBack: cada evento e cada dia da grelha são lidos por extenso) e ícone adaptativo/monocromático.
 - Interface em português europeu.
 
 ## Como funciona
@@ -31,7 +34,7 @@ Detalhes em [`docs/`](docs/): [ARCHITECTURE](docs/ARCHITECTURE.md), [DATA_MODEL]
 
 ## Tecnologias
 
-Kotlin · Jetpack Compose (Material 3) · Hilt · Room · Retrofit/OkHttp (`okhttp-sse`) · kotlinx.serialization · WorkManager · DataStore · JUnit, Turbine, MockWebServer.
+Kotlin · Jetpack Compose (Material 3) · Hilt · Room · Retrofit/OkHttp (`okhttp-sse`) · kotlinx.serialization · WorkManager · AlarmManager · DataStore · JUnit, Turbine, MockWebServer, testes de interface do Compose.
 
 Sem o SDK do PocketBase para Kotlin. `minSdk` 26.
 
@@ -48,7 +51,7 @@ O servidor PocketBase corre à parte (Docker); a sua configuração está descri
 
 ## Servidor
 
-1. PocketBase com as coleções `users`, `lists` e `items` e as regras de [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md). Sem registo público: as duas contas são criadas à mão.
+1. PocketBase com as coleções `users`, `lists`, `items`, `event_types` e `events` e as regras de [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md). Sem registo público: as duas contas são criadas à mão. Os três tipos de evento iniciais (Família, Veronica, João) criam-se à mão.
 2. Duas listas na coleção `lists`, criadas nesta ordem: **Compras** e depois **Tarefas**. A app distingue-as pela ordem de criação.
 3. Exposto só na rede privada, com HTTPS: `tailscale serve --bg --https=8443 8090`. Nada de Tailscale Funnel nem de portas abertas à internet.
 
@@ -66,8 +69,11 @@ Requisitos: JDK 17+ (ou o JBR do Android Studio) e o Android SDK.
    ./gradlew assembleDebug          # APK de debug (applicationId com sufixo .debug)
    ./gradlew testDebugUnitTest      # testes unitários
    ./gradlew lintDebug              # lint
+   ./gradlew connectedDebugAndroidTest   # testes no telemóvel (USB, depuração ativa)
    ```
 3. Instalar: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
+
+Os testes instrumentados correm numa base de dados em memória, instalam só a app `.debug` e não tocam nos dados da release. Cobrem a migração da base de dados, o ecrã do calendário (criar, editar, apagar, tipos, texto lido pelo TalkBack, offline por construção), o alarme de lembretes de ponta a ponta e as notificações.
 
 ## Release assinada
 
@@ -89,4 +95,4 @@ Nada disto entra no repositório: URL do servidor, palavras-passe, keystore e `k
 
 ## Estado
 
-O MVP está feito e instalado. Falta apenas validar com dois telemóveis ao mesmo tempo, com dados móveis e com rede instável. Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Fases 0 a 9 feitas: Compras, Tarefas, calendário com tipos, lembretes, avisos e grelha mensal; versão instalada 1.7.0. Por validar com **dois telemóveis ao mesmo tempo** (tempo real entre os dois, os avisos com um item ou evento real do outro) e com dados móveis ou rede instável; o modo escuro só foi visto no ecrã do calendário. Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
