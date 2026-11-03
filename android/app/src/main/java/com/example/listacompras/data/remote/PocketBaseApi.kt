@@ -54,6 +54,34 @@ interface PocketBaseApi {
     @DELETE("api/collections/items/records/{id}")
     suspend fun deleteItem(@Path("id") id: String): Response<Unit>
 
+    // Generic record endpoints for the calendar collections (`events`, `event_types`). Bodies and
+    // results are raw JSON so the sync engine stays collection-agnostic; callers decode the DTOs.
+
+    @GET("api/collections/{collection}/records")
+    suspend fun listRecords(
+        @Path("collection") collection: String,
+        @Query("sort") sort: String = "created,id",
+        @Query("perPage") perPage: Int = 200,
+        @Query("page") page: Int = 1,
+    ): ListResponse<JsonObject>
+
+    @GET("api/collections/{collection}/records/{id}")
+    suspend fun getRecord(@Path("collection") collection: String, @Path("id") id: String): JsonObject
+
+    @POST("api/collections/{collection}/records")
+    suspend fun createRecord(@Path("collection") collection: String, @Body body: JsonObject): JsonObject
+
+    @PATCH("api/collections/{collection}/records/{id}")
+    suspend fun updateRecord(
+        @Path("collection") collection: String,
+        @Path("id") id: String,
+        @Body body: JsonObject,
+    ): JsonObject
+
+    /** Returns 204 on success. Callers treat 404 as success too. */
+    @DELETE("api/collections/{collection}/records/{id}")
+    suspend fun deleteRecord(@Path("collection") collection: String, @Path("id") id: String): Response<Unit>
+
     /**
      * Registers the realtime subscriptions of a connected SSE client (204 on success, 404 for an
      * unknown client id). The `Authorization` header sent here authorizes the whole subscription.

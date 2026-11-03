@@ -9,6 +9,8 @@ import com.example.listacompras.data.repository.CountingSyncScheduler
 import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.data.repository.FakeActiveList
 import com.example.listacompras.data.repository.FakeItemDao
+import com.example.listacompras.data.repository.FakeEventDao
+import com.example.listacompras.data.repository.FakeEventTypeDao
 import com.example.listacompras.data.repository.FakePendingOpDao
 import com.example.listacompras.data.repository.FakeSyncMetaDao
 import com.example.listacompras.data.repository.ItemRepositoryImpl
@@ -33,6 +35,9 @@ class ReconcilerTest {
     private val opDao = FakePendingOpDao()
     private val metaDao = FakeSyncMetaDao()
     private val api = FakePocketBaseApi()
+    private val eventTypeDao = FakeEventTypeDao()
+    private val eventDao = FakeEventDao()
+    private val logs = mutableListOf<String>()
     private val activeList = FakeActiveList("list1")
     private var token: String? = "token"
     private var listAvailable = true
@@ -54,7 +59,7 @@ class ReconcilerTest {
     )
     private val reconciler = Reconciler(
         api, itemDao, opDao, metaDao, activeList, lists, tx, SyncLock(), TokenProvider { token }, clock,
-        pageSize = 2,
+        eventTypeDao, eventDao, json, log = { logs += it }, pageSize = 2,
     )
 
     private fun remote(id: String, name: String = id, list: String = "list1", checked: Boolean = false) = ItemDto(

@@ -5,7 +5,7 @@
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b (login com teclado e texto branco; a cor foi aplicada na v7).
 > - **9.3 implementada, por confirmar:** o utilizador instalou a v8 ("alterações efetuadas") mas ainda não reportou o teste das notificações. Perguntar o resultado primeiro: aviso com a app fechada (cerca de 15 min), itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez. Só então marcar `[x]`.
 > - **Servidor:** o utilizador diz ter criado/ajustado `event_types` e `events` segundo [DATA_MODEL](DATA_MODEL.md) (incluindo `reminder` como *select* `at_time`/`1h`/`1d`, `all_day` sem *Nonempty*, pattern da `color`, regras de API e os 3 tipos iniciais Família `#4CAF50`, Veronica `#E91E63`, João `#2196F3`). **Não verificado**: confirmar na 9.6 com a primeira chamada à API.
-> - **Próxima tarefa: 9.4** (motor de sync para várias collections + migração Room v1→v2). Antes de implementar, consultar o consultor (regra do CLAUDE.md) e ler `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier`, `OutboxCoalescer`, `PendingOpEntity` e `AppDatabase`.
+> - **9.4 implementada em 2026-11-03, por verificar** a migração Room num dispositivo (ver a tarefa). Depois: 9.5 (confirmar o servidor) e 9.6.
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
 
@@ -148,6 +148,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.4** Motor de sincronização para várias collections + migração Room v1→v2
   - `pending_ops` ganha a coluna `collection`; `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier` e `OutboxCoalescer` passam a tratar `items`, `events` e `event_types`; subscrição realtime `events/*` e `event_types/*`
   - ✔ Migração Room testada (dados da v1 intactos, `schemas/2.json` em git); todos os testes de sync existentes continuam a passar; as Compras e Tarefas não mudam
+  - Estado: implementado em 2026-11-03 (esquema Room v2 completo: coluna `collection` + tabelas `events`/`event_types`, entidades, DAOs, DTOs, mappers; `MIGRATION_1_2` com o SQL de `schemas/2.json`; pull isolado, realtime por tópico com recuo para `items/*`). 168 testes unitários, `assembleDebug`, `compileDebugAndroidTestKotlin` e `lintDebug` passam. **Por verificar:** `MigrationTest` (instrumentado) não correu: sem dispositivo e o emulador do computador falha com *segfault*; correr `./gradlew connectedDebugAndroidTest` com o telemóvel ligado por USB (instala a app de teste `.debug` e não mexe nos dados da release).
 - [ ] **9.5** Collections `event_types` e `events` no servidor
   - Criadas no dashboard do PocketBase (migração gerada e guardada em git), com os três tipos iniciais: Família, Veronica, João
   - ✔ Pedido sem token não devolve dados; ambos os utilizadores leem e escrevem; ver [DATA_MODEL](DATA_MODEL.md)

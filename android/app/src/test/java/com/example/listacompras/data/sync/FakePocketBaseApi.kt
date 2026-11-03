@@ -82,6 +82,49 @@ class FakePocketBaseApi : PocketBaseApi {
     private fun deleteNow(id: String): Response<Unit> =
         if (server.remove(id) != null) Response.success(Unit) else Response.error(404, "".toResponseBody())
 
+    /** Generic collections (`events`, `event_types`), by collection name then id. */
+    val records = mutableMapOf<String, LinkedHashMap<String, JsonObject>>()
+
+    /** Collections whose list call fails with this HTTP code (to simulate missing/denied ones). */
+    val listFailures = mutableMapOf<String, Int>()
+
+    private fun table(collection: String) = records.getOrPut(collection) { linkedMapOf() }
+
+    override suspend fun listRecords(collection: String, sort: String, perPage: Int, page: Int): ListResponse<JsonObject> {
+        listFailures[collection]?.let { calls++; throw http(it) }
+        return handle {
+            val all = table(collection).values.toList()
+            val size = minOf(perPage, maxPerPage)
+            val totalPages = maxOf(1, (all.size + size - 1) / size)
+            ListResponse(page, size, totalPages, all.size, all.drop((page - 1) * size).take(size))
+        }
+    }
+
+    override suspend fun getRecord(collection: String, id: String): JsonObject =
+        handle { table(collection)[id] ?: throw http(404) }
+
+    override suspend fun createRecord(collection: String, body: JsonObject): JsonObject = handle {
+        val id = (body["id"] as JsonPrimitive).content
+        if (id in table(collection)) throw http(400)
+        table(collection)[id] = body
+        body
+    }
+
+    override suspend fun updateRecord(collection: String, id: String, body: JsonObject): JsonObject = handle {
+        val current = table(collection)[id] ?: throw http(404)
+        JsonObject(current + body).also { table(collection)[id] = it }
+    }
+
+    override suspend fun deleteRecord(collection: String, id: String): Response<Unit> {
+        calls++
+        return when (val failure = failures.removeFirstOrNull()) {
+            null -> if (table(collection).remove(id) != null) Response.success(Unit) else Response.error(404, "".toResponseBody())
+            Failure.NetworkDown -> throw IOException("down")
+            Failure.ResponseLost -> { table(collection).remove(id); throw IOException("response lost") }
+            is Failure.Http -> Response.error(failure.code, "".toResponseBody())
+        }
+    }
+
     override suspend fun subscribe(body: SubscribeRequest): Response<Unit> = error("not used")
     override suspend fun login(body: LoginRequest): AuthResponse = error("not used")
     override suspend fun refresh(): AuthResponse = error("not used")

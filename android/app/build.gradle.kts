@@ -65,6 +65,11 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
     }
+    // Exported Room schemas feed MigrationTestHelper in the instrumented tests.
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

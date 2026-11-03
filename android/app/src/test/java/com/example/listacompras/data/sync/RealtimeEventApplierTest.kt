@@ -7,6 +7,8 @@ import com.example.listacompras.data.repository.CountingSyncScheduler
 import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.data.repository.FakeActiveList
 import com.example.listacompras.data.repository.FakeItemDao
+import com.example.listacompras.data.repository.FakeEventDao
+import com.example.listacompras.data.repository.FakeEventTypeDao
 import com.example.listacompras.data.repository.FakePendingOpDao
 import com.example.listacompras.data.repository.ItemRepositoryImpl
 import com.example.listacompras.data.repository.TransactionRunner
@@ -23,12 +25,14 @@ class RealtimeEventApplierTest {
     private val json = PocketBaseApiFactory.json
     private val itemDao = FakeItemDao()
     private val opDao = FakePendingOpDao()
+    private val eventTypeDao = FakeEventTypeDao()
+    private val eventDao = FakeEventDao()
     private val logs = mutableListOf<String>()
     private val tx = object : TransactionRunner {
         override suspend fun <T> run(block: suspend () -> T): T = block()
     }
     private val activeList = FakeActiveList("list1")
-    private val applier = RealtimeEventApplier(itemDao, opDao, activeList, tx, SyncLock(), json) { logs += it }
+    private val applier = RealtimeEventApplier(itemDao, eventTypeDao, eventDao, opDao, activeList, tx, SyncLock(), json) { logs += it }
 
     private fun record(id: String, name: String = id, list: String = "list1", checked: Boolean = false) =
         """{"id":"$id","list":"$list","name":"$name","quantity":"","checked":$checked,"category":"",""" +

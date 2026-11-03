@@ -8,6 +8,8 @@ import com.example.listacompras.data.repository.CountingSyncScheduler
 import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.data.repository.FakeActiveList
 import com.example.listacompras.data.repository.FakeItemDao
+import com.example.listacompras.data.repository.FakeEventDao
+import com.example.listacompras.data.repository.FakeEventTypeDao
 import com.example.listacompras.data.repository.FakePendingOpDao
 import com.example.listacompras.data.repository.FakeSyncMetaDao
 import com.example.listacompras.data.repository.ItemRepositoryImpl
@@ -27,6 +29,8 @@ class OutboxProcessorTest {
     private val opDao = FakePendingOpDao()
     private val metaDao = FakeSyncMetaDao()
     private val api = FakePocketBaseApi()
+    private val eventTypeDao = FakeEventTypeDao()
+    private val eventDao = FakeEventDao()
     private val logs = mutableListOf<String>()
     private var token: String? = "token"
     private var seq = 0
@@ -40,7 +44,7 @@ class OutboxProcessorTest {
         json, Clock.systemUTC(), CountingSyncScheduler(), newId = { "item%011d".format(++seq) },
     )
     private val processor = OutboxProcessor(
-        opDao, itemDao, metaDao, tx, OutboxCoalescer(opDao, tx, json), api,
+        opDao, itemDao, eventDao, eventTypeDao, metaDao, tx, OutboxCoalescer(opDao, tx, json), api,
         TokenProvider { token }, json, log = { logs += it }, lock = SyncLock(),
     )
 

@@ -1,15 +1,22 @@
 package com.example.listacompras.data.sync
 
+import com.example.listacompras.data.local.dao.EventDao
+import com.example.listacompras.data.local.dao.EventTypeDao
 import com.example.listacompras.data.local.dao.ItemDao
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.local.dao.SyncMetaDao
 import com.example.listacompras.data.local.entity.SyncMetaEntity
 import com.example.listacompras.data.remote.PocketBaseApi
 import com.example.listacompras.data.remote.TokenProvider
+import com.example.listacompras.data.remote.dto.EventDto
+import com.example.listacompras.data.remote.dto.EventTypeDto
 import com.example.listacompras.data.remote.dto.ItemDto
 import com.example.listacompras.data.repository.ActiveListProvider
 import com.example.listacompras.data.repository.TransactionRunner
 import com.example.listacompras.data.repository.toEntity
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.repository.ListRepository
 import kotlinx.coroutines.CancellationException
@@ -39,6 +46,10 @@ class Reconciler(
     private val lock: SyncLock,
     private val tokenProvider: TokenProvider,
     private val clock: Clock,
+    private val eventTypeDao: EventTypeDao,
+    private val eventDao: EventDao,
+    private val json: Json,
+    private val log: (String) -> Unit,
     private val pageSize: Int = PAGE_SIZE,
 ) : FullPull {
 
@@ -55,6 +66,7 @@ class Reconciler(
             val listIds = activeList.knownListIds()
             if (listIds.isEmpty()) return@withLock SyncOutcome.Retry
             apply(listIds.associateWith { fetchAll(it) })
+            pullCalendar()
             SyncOutcome.Done
         } catch (e: CancellationException) {
             throw e
@@ -71,6 +83,60 @@ class Reconciler(
         } catch (e: SerializationException) {
             // A malformed response: keep the local data and try again rather than failing the work for good.
             SyncOutcome.Retry
+        }
+    }
+
+    /**
+     * `event_types` before `events`, each in its own try: the calendar collections must never make
+     * the items pull fail (they may be missing, denied or malformed on the server). A failure leaves
+     * the local calendar data as it was; the next pull tries again.
+     */
+    private suspend fun pullCalendar() {
+        for (collection in SyncCollections.CALENDAR) {
+            try {
+                val records = fetchRecords(collection)
+                when (collection) {
+                    SyncCollections.EVENT_TYPES -> applyEventTypes(records.map { json.decodeFromJsonElement<EventTypeDto>(it) })
+                    else -> applyEvents(records.map { json.decodeFromJsonElement<EventDto>(it) })
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: HttpException) {
+                log("Calendar pull skipped ($collection): HTTP ${e.code()}")
+            } catch (e: Exception) {
+                log("Calendar pull skipped ($collection): ${e.javaClass.simpleName}")
+            }
+        }
+    }
+
+    private suspend fun fetchRecords(collection: String): List<JsonObject> {
+        val all = mutableListOf<JsonObject>()
+        var page = 1
+        while (true) {
+            val response = api.listRecords(collection, perPage = pageSize, page = page)
+            all += response.items
+            if (response.items.isEmpty() || page >= response.totalPages) return all
+            page++
+        }
+    }
+
+    private suspend fun applyEventTypes(remote: List<EventTypeDto>) {
+        transactions.run {
+            val pending = pendingOpDao.getPendingItemIds(SyncCollections.EVENT_TYPES).toSet()
+            val remoteIds = remote.mapTo(HashSet()) { it.id }
+            val stale = eventTypeDao.getAll().map { it.id }.filter { it !in remoteIds && it !in pending }
+            eventTypeDao.upsertAll(remote.filter { it.id !in pending }.map { it.toEntity() })
+            stale.chunked(DELETE_CHUNK).forEach { eventTypeDao.deleteByIds(it) }
+        }
+    }
+
+    private suspend fun applyEvents(remote: List<EventDto>) {
+        transactions.run {
+            val pending = pendingOpDao.getPendingItemIds(SyncCollections.EVENTS).toSet()
+            val remoteIds = remote.mapTo(HashSet()) { it.id }
+            val stale = eventDao.getAll().map { it.id }.filter { it !in remoteIds && it !in pending }
+            eventDao.upsertAll(remote.filter { it.id !in pending }.map { it.toEntity() })
+            stale.chunked(DELETE_CHUNK).forEach { eventDao.deleteByIds(it) }
         }
     }
 
@@ -93,7 +159,7 @@ class Reconciler(
     /** Each list is reconciled against its own remote items only, so one list never deletes another's. */
     private suspend fun apply(remoteByList: Map<String, List<ItemDto>>) {
         transactions.run {
-            val pending = pendingOpDao.getPendingItemIds().toSet()
+            val pending = pendingOpDao.getPendingItemIds(SyncCollections.ITEMS).toSet()
             for ((listId, remote) in remoteByList) {
                 val remoteIds = remote.mapTo(HashSet()) { it.id }
                 val staleLocal = itemDao.getItems(listId).map { it.id }.filter { it !in remoteIds && it !in pending }

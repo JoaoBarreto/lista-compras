@@ -139,18 +139,18 @@ class RealtimeClient(
             } else {
                 // Events are only for our one subscription; anything unparseable is ignored there.
                 log("Realtime event received: ${message.type}")
-                applier.apply(message.data)
+                applier.apply(message.data, message.type)
             }
         }
     }
 
     private suspend fun handshake(clientId: String, onConnected: () -> Unit) {
-        val response = try {
-            api.subscribe(SubscribeRequest(clientId, listOf(TOPIC)))
-        } catch (e: HttpException) {
-            throw ConnectionLost("subscribe HTTP ${e.code()}", e)
-        }
-        if (!response.isSuccessful) throw ConnectionLost("subscribe HTTP ${response.code()}")
+        subscribe(clientId, TOPICS)
+            ?: run {
+                // The calendar topics must never cost the shopping lists their realtime updates.
+                log("Realtime subscribe with calendar topics rejected; falling back to items")
+                subscribe(clientId, listOf(TOPIC)) ?: throw ConnectionLost("subscribe rejected")
+            }
         log("Realtime subscribed")
         // Send queued local changes first (as the sync worker does): the work manager may be waiting
         // out a backoff built up while offline, and the pull must not run over unsent changes.
@@ -170,6 +170,19 @@ class RealtimeClient(
         onConnected()
         reachability.markReachable()
         scheduler.requestSync()
+    }
+
+    /** Returns null when the server rejects the subscription with a 4xx; other failures end the connection. */
+    private suspend fun subscribe(clientId: String, topics: List<String>): Unit? {
+        val response = try {
+            api.subscribe(SubscribeRequest(clientId, topics))
+        } catch (e: HttpException) {
+            if (e.code() in 400..499 && topics.size > 1) return null
+            throw ConnectionLost("subscribe HTTP ${e.code()}", e)
+        }
+        if (response.isSuccessful) return Unit
+        if (response.code() in 400..499 && topics.size > 1) return null
+        throw ConnectionLost("subscribe HTTP ${response.code()}")
     }
 
     private fun clientIdOf(message: SseMessage): String =
@@ -211,6 +224,9 @@ class RealtimeClient(
     companion object {
         /** Every record of the `items` collection. The bare `items` form is deprecated server-side. */
         const val TOPIC = "items/*"
+
+        /** Items plus the calendar collections; the server only delivers what the user may read. */
+        val TOPICS = listOf(TOPIC) + SyncCollections.CALENDAR.map(SyncCollections::topic)
         private const val CONNECT_EVENT = "PB_CONNECT"
     }
 }

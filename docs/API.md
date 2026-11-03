@@ -70,9 +70,9 @@ Não é WebSocket. Fluxo (documentação oficial v0.41; **confirmado no servidor
 1. `GET /api/realtime` com `Accept: text/event-stream`. O primeiro evento é `PB_CONNECT`, com `data: {"clientId":"..."}` (o SDK JS lê o id também do campo SSE `id:`; o cliente aceita ambos).
 2. `POST /api/realtime` (com `Authorization`) a registar subscrições; sucesso = **204**, `clientId` desconhecido ou expirado = **404**:
    ```json
-   { "clientId": "<clientId>", "subscriptions": ["items/*"] }
+   { "clientId": "<clientId>", "subscriptions": ["items/*", "event_types/*", "events/*"] }
    ```
-   O tópico para todos os registos da collection é **`items/*`** (formato `COLECAO/*` ou `COLECAO/ID`). A forma `items` sem `/*` está obsoleta no servidor e a documentação não a menciona.
+   Desde a 9.4 a app subscreve também `event_types/*` e `events/*`; o evento SSE chega com o nome do tópico, e é por ele que a app escolhe como o descodificar. Se o servidor recusar a subscrição com um 4xx (collection em falta), a app volta a subscrever só `items/*`, para as Compras e Tarefas nunca perderem o realtime. O tópico para todos os registos da collection é **`items/*`** (formato `COLECAO/*` ou `COLECAO/ID`). A forma `items` sem `/*` está obsoleta no servidor e a documentação não a menciona.
 3. Chegam eventos cujo nome (`event:`) é o tópico subscrito (`items/*`) e dados:
    ```json
    { "action": "create" | "update" | "delete", "record": { ... } }

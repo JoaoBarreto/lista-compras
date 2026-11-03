@@ -6,6 +6,8 @@ import com.example.listacompras.data.remote.TokenProvider
 import com.example.listacompras.data.repository.CountingSyncScheduler
 import com.example.listacompras.data.repository.FakeActiveList
 import com.example.listacompras.data.repository.FakeItemDao
+import com.example.listacompras.data.repository.FakeEventDao
+import com.example.listacompras.data.repository.FakeEventTypeDao
 import com.example.listacompras.data.repository.FakePendingOpDao
 import com.example.listacompras.data.repository.TransactionRunner
 import kotlinx.coroutines.CompletableDeferred
@@ -43,6 +45,7 @@ class RealtimeClientTest {
     private var outboxResult = SyncOutcome.Done
     private var pullGate: CompletableDeferred<Unit>? = null
     private var subscribeCode = 204
+    private var subscribeCodeFor: ((String) -> Int)? = null
     private var eventForFirstStream: String? = null
     private var notEventStream = false
     private val backoffAttempts = CopyOnWriteArrayList<Int>()
@@ -74,7 +77,7 @@ class RealtimeClientTest {
                     }
                 } else {
                     posts += Post(request.headers["Authorization"], request.body?.utf8().orEmpty())
-                    MockResponse.Builder().code(subscribeCode).build()
+                    MockResponse.Builder().code(subscribeCodeFor?.invoke(posts.last().body) ?: subscribeCode).build()
                 }
         }
         server.start()
@@ -93,7 +96,7 @@ class RealtimeClientTest {
             override suspend fun <T> run(block: suspend () -> T): T = block()
         }
         val applier = RealtimeEventApplier(
-            itemDao, FakePendingOpDao(), FakeActiveList("list1"), tx, SyncLock(), json,
+            itemDao, FakeEventTypeDao(), FakeEventDao(), FakePendingOpDao(), FakeActiveList("list1"), tx, SyncLock(), json,
         ) { logs += it }
         return RealtimeClient(
             sseClient = http,
@@ -134,7 +137,7 @@ class RealtimeClientTest {
 
         val post = posts.first()
         assertEquals("tok1", post.auth)
-        assertEquals("""{"clientId":"c1","subscriptions":["items/*"]}""", post.body)
+        assertEquals("""{"clientId":"c1","subscriptions":["items/*","event_types/*","events/*"]}""", post.body)
         assertTrue(pulls.get() >= 1)
         assertTrue(scheduler.requests >= 1)
         assertEquals("Leite", itemDao.items.value.getValue("a").name)
@@ -161,10 +164,19 @@ class RealtimeClientTest {
     fun `a failed subscribe is retried`() {
         subscribeCode = 404
 
-        runClient { awaitUntil { posts.size >= 3 } }
+        runClient { awaitUntil { gets.get() >= 3 } }
 
         assertEquals(0, pulls.get())
-        assertTrue(gets.get() >= 3)
+    }
+
+    @Test
+    fun `if the calendar topics are rejected it falls back to items only and still pulls`() {
+        // Only a subscription that includes the calendar topics is refused.
+        subscribeCodeFor = { body -> if ("events/*" in body) 400 else 204 }
+
+        runClient { awaitUntil { pulls.get() >= 1 } }
+
+        assertEquals("""{"clientId":"c1","subscriptions":["items/*"]}""", posts[1].body)
     }
 
     @Test

@@ -20,9 +20,9 @@ class FakePendingOpDao : PendingOpDao {
         return id
     }
     override suspend fun getAll() = ops.toList()
-    override suspend fun getForItem(itemId: String) = ops.filter { it.itemId == itemId }
+    override suspend fun getForItem(collection: String, itemId: String) = ops.filter { it.collection == collection && it.itemId == itemId }
     override suspend fun delete(opId: Long) { ops.removeAll { it.opId == opId }; changed() }
-    override suspend fun deleteForItem(itemId: String) { ops.removeAll { it.itemId == itemId }; changed() }
+    override suspend fun deleteForItem(collection: String, itemId: String) { ops.removeAll { it.collection == collection && it.itemId == itemId }; changed() }
     override suspend fun incrementAttempts(opId: Long) {
         ops.replaceAll { if (it.opId == opId) it.copy(attempts = it.attempts + 1) else it }
     }
@@ -30,5 +30,5 @@ class FakePendingOpDao : PendingOpDao {
         ops.replaceAll { if (it.opId == opId) it.copy(payloadJson = payloadJson) else it }
     }
     override fun observeCount(): Flow<Int> = changes.map { ops.size }
-    override suspend fun getPendingItemIds() = ops.map { it.itemId }.distinct()
+    override suspend fun getPendingItemIds(collection: String) = ops.filter { it.collection == collection }.map { it.itemId }.distinct()
 }

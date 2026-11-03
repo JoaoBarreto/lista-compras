@@ -2,6 +2,8 @@ package com.example.listacompras.di
 
 import com.example.listacompras.data.auth.TokenStore
 import com.example.listacompras.data.local.AppDatabase
+import com.example.listacompras.data.local.dao.EventDao
+import com.example.listacompras.data.local.dao.EventTypeDao
 import com.example.listacompras.data.local.dao.ItemDao
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.local.dao.SyncMetaDao
@@ -76,9 +78,13 @@ object RepositoryModule {
         transactions: TransactionRunner,
         lock: SyncLock,
         tokenStore: TokenStore,
+        eventTypeDao: EventTypeDao,
+        eventDao: EventDao,
     ): Reconciler = Reconciler(
         api, itemDao, pendingOpDao, syncMetaDao, activeList, listRepository, transactions, lock,
-        tokenStore, Clock.systemUTC(),
+        tokenStore, Clock.systemUTC(), eventTypeDao, eventDao, PocketBaseApiFactory.json,
+        // Only the collection name and HTTP code are logged.
+        log = { Log.w("Reconciler", it) },
     )
 
     @Provides
@@ -86,6 +92,8 @@ object RepositoryModule {
     fun provideOutboxProcessor(
         pendingOpDao: PendingOpDao,
         itemDao: ItemDao,
+        eventDao: EventDao,
+        eventTypeDao: EventTypeDao,
         syncMetaDao: SyncMetaDao,
         transactions: TransactionRunner,
         api: PocketBaseApi,
@@ -94,6 +102,8 @@ object RepositoryModule {
     ): OutboxProcessor = OutboxProcessor(
         pendingOpDao = pendingOpDao,
         itemDao = itemDao,
+        eventDao = eventDao,
+        eventTypeDao = eventTypeDao,
         syncMetaDao = syncMetaDao,
         transactions = transactions,
         coalescer = OutboxCoalescer(pendingOpDao, transactions, PocketBaseApiFactory.json),

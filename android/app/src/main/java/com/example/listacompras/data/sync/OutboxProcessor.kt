@@ -1,5 +1,7 @@
 package com.example.listacompras.data.sync
 
+import com.example.listacompras.data.local.dao.EventDao
+import com.example.listacompras.data.local.dao.EventTypeDao
 import com.example.listacompras.data.local.dao.ItemDao
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.local.dao.SyncMetaDao
@@ -47,6 +49,8 @@ fun interface OutboxSender {
 class OutboxProcessor(
     private val pendingOpDao: PendingOpDao,
     private val itemDao: ItemDao,
+    private val eventDao: EventDao,
+    private val eventTypeDao: EventTypeDao,
     private val syncMetaDao: SyncMetaDao,
     private val transactions: TransactionRunner,
     private val coalescer: OutboxCoalescer,
@@ -104,6 +108,38 @@ class OutboxProcessor(
     }
 
     private suspend fun execute(op: PendingOpEntity, wasAttempted: Boolean) {
+        if (op.collection == SyncCollections.ITEMS) executeItem(op, wasAttempted) else executeRecord(op, wasAttempted)
+    }
+
+    /** `events` and `event_types`: same protocol as items, over the generic record endpoints. */
+    private suspend fun executeRecord(op: PendingOpEntity, wasAttempted: Boolean) {
+        val collection = op.collection
+        if (collection !in SyncCollections.CALENDAR) throw IllegalArgumentException("unknown collection")
+        when (op.type) {
+            OpType.CREATE -> {
+                val body = json.parseToJsonElement(op.payloadJson).jsonObject
+                try {
+                    api.createRecord(collection, body)
+                } catch (e: HttpException) {
+                    if (!(e.code() == 400 && wasAttempted && recordExists(collection, op.itemId))) throw e
+                }
+            }
+            OpType.UPDATE -> api.updateRecord(collection, op.itemId, json.parseToJsonElement(op.payloadJson).jsonObject)
+            OpType.DELETE -> {
+                val response = api.deleteRecord(collection, op.itemId)
+                if (!response.isSuccessful && response.code() != 404) throw HttpException(response)
+            }
+        }
+    }
+
+    private suspend fun recordExists(collection: String, id: String): Boolean = try {
+        api.getRecord(collection, id)
+        true
+    } catch (e: HttpException) {
+        if (e.code() == 404) false else throw e
+    }
+
+    private suspend fun executeItem(op: PendingOpEntity, wasAttempted: Boolean) {
         when (op.type) {
             OpType.CREATE -> {
                 val dto = json.decodeFromString<ItemDto>(op.payloadJson)
@@ -148,14 +184,22 @@ class OutboxProcessor(
     private suspend fun finish(op: PendingOpEntity, discarded: Boolean) {
         transactions.run {
             pendingOpDao.delete(op.opId)
-            if (pendingOpDao.getForItem(op.itemId).isEmpty()) {
-                itemDao.getById(op.itemId)?.takeIf { it.syncState != SyncState.SYNCED }
-                    ?.let { itemDao.upsert(it.copy(syncState = SyncState.SYNCED)) }
-            }
+            if (pendingOpDao.getForItem(op.collection, op.itemId).isEmpty()) markSynced(op.collection, op.itemId)
             if (discarded) {
                 val count = syncMetaDao.get(DISCARDED_KEY)?.toLongOrNull() ?: 0L
                 syncMetaDao.put(SyncMetaEntity(DISCARDED_KEY, (count + 1).toString()))
             }
+        }
+    }
+
+    private suspend fun markSynced(collection: String, id: String) {
+        when (collection) {
+            SyncCollections.ITEMS -> itemDao.getById(id)?.takeIf { it.syncState != SyncState.SYNCED }
+                ?.let { itemDao.upsert(it.copy(syncState = SyncState.SYNCED)) }
+            SyncCollections.EVENTS -> eventDao.getById(id)?.takeIf { it.syncState != SyncState.SYNCED }
+                ?.let { eventDao.upsert(it.copy(syncState = SyncState.SYNCED)) }
+            SyncCollections.EVENT_TYPES -> eventTypeDao.getById(id)?.takeIf { it.syncState != SyncState.SYNCED }
+                ?.let { eventTypeDao.upsert(it.copy(syncState = SyncState.SYNCED)) }
         }
     }
 

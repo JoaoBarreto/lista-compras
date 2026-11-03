@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 
 /**
- * Merges the pending operations of each item into the fewest that give the same result on the
+ * Merges the pending operations of each record (keyed by collection and id) into the fewest that give the same result on the
  * server. Surviving operations are always existing rows (keeping their `opId`, so ordering holds);
  * only payloads change.
  *
@@ -50,11 +50,13 @@ class OutboxCoalescer(
 
     /** Pure transform over the whole outbox (ordered by `opId`); items are independent. */
     fun coalesce(ops: List<PendingOpEntity>): List<PendingOpEntity> =
-        ops.groupBy { it.itemId }.values
+        ops.groupBy { it.collection to it.itemId }.values
             .flatMap(::coalesceItem)
             .sortedBy { it.opId }
 
     private fun coalesceItem(ops: List<PendingOpEntity>): List<PendingOpEntity> {
+        // The `checked_by` rule only exists for items; every record is keyed by (collection, id).
+        val isItem = ops.first().collection == SyncCollections.ITEMS
         val deleteIndex = ops.indexOfFirst { it.type == OpType.DELETE }
         val live = if (deleteIndex >= 0) ops.subList(0, deleteIndex) else ops
         val create = live.firstOrNull()?.takeIf { it.type == OpType.CREATE }
@@ -70,7 +72,7 @@ class OutboxCoalescer(
         }
         return when {
             create == null -> listOfNotNull(mergeUpdates(updates))
-            create.attempts == 0 -> listOf(create.withPayload(mergePayloads(create, updates, dropEmptyCheckedBy = true)))
+            create.attempts == 0 -> listOf(create.withPayload(mergePayloads(create, updates, dropEmptyCheckedBy = isItem)))
             else -> listOfNotNull(create, mergeUpdates(updates))
         }
     }

@@ -3,6 +3,8 @@ package com.example.listacompras.di
 import android.util.Log
 import com.example.listacompras.BuildConfig
 import com.example.listacompras.data.auth.TokenStore
+import com.example.listacompras.data.local.dao.EventDao
+import com.example.listacompras.data.local.dao.EventTypeDao
 import com.example.listacompras.data.local.dao.ItemDao
 import com.example.listacompras.data.local.dao.PendingOpDao
 import com.example.listacompras.data.remote.PocketBaseApi
@@ -42,12 +44,14 @@ object RealtimeModule {
     @Singleton
     fun provideRealtimeEventApplier(
         itemDao: ItemDao,
+        eventTypeDao: EventTypeDao,
+        eventDao: EventDao,
         pendingOpDao: PendingOpDao,
         activeList: ActiveListProvider,
         transactions: TransactionRunner,
         lock: SyncLock,
     ): RealtimeEventApplier = RealtimeEventApplier(
-        itemDao, pendingOpDao, activeList, transactions, lock, PocketBaseApiFactory.json,
+        itemDao, eventTypeDao, eventDao, pendingOpDao, activeList, transactions, lock, PocketBaseApiFactory.json,
         // Only the action is logged, never record contents.
         log = { if (BuildConfig.DEBUG) Log.d(TAG, it) },
     )

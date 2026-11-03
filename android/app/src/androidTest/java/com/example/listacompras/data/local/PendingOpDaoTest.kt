@@ -33,7 +33,7 @@ class PendingOpDaoTest : DaoTestBase() {
         dao.insert(op("b"))
         dao.insert(op("a"))
 
-        assertEquals(listOf(OpType.CREATE, OpType.UPDATE), dao.getForItem("a").map { it.type })
+        assertEquals(listOf(OpType.CREATE, OpType.UPDATE), dao.getForItem("items", "a").map { it.type })
     }
 
     @Test
@@ -63,7 +63,7 @@ class PendingOpDaoTest : DaoTestBase() {
         dao.insert(op("a"))
         dao.insert(op("b"))
 
-        dao.deleteForItem("a")
+        dao.deleteForItem("items", "a")
 
         assertEquals(listOf("b"), dao.getAll().map { it.itemId })
     }
@@ -75,7 +75,7 @@ class PendingOpDaoTest : DaoTestBase() {
 
         db.itemDao().deleteById("a")
 
-        assertEquals(listOf(OpType.DELETE), dao.getForItem("a").map { it.type })
+        assertEquals(listOf(OpType.DELETE), dao.getForItem("items", "a").map { it.type })
     }
 
     @Test
@@ -99,7 +99,7 @@ class PendingOpDaoTest : DaoTestBase() {
         dao.insert(op("a"))
         dao.insert(op("b"))
 
-        assertEquals(setOf("a", "b"), dao.getPendingItemIds().toSet())
-        assertEquals(2, dao.getPendingItemIds().size)
+        assertEquals(setOf("a", "b"), dao.getPendingItemIds("items").toSet())
+        assertEquals(2, dao.getPendingItemIds("items").size)
     }
 }
