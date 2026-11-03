@@ -3,6 +3,7 @@ package com.example.listacompras.data.repository
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
 import com.example.listacompras.data.remote.PocketBaseApiFactory
+import com.example.listacompras.data.sync.OutboxCoalescer
 import com.example.listacompras.data.sync.SyncCollections
 import com.example.listacompras.domain.model.Reminder
 import com.example.listacompras.domain.model.SyncState
@@ -199,6 +200,21 @@ class CalendarRepositoriesTest {
             listOf(SyncCollections.EVENT_TYPES, SyncCollections.EVENTS),
             ops().map { it.collection },
         )
+    }
+
+    @Test
+    fun `renaming a type after creating an event with it keeps the type CREATE before the event CREATE`() = runTest {
+        val typeId = addType()
+        events.add("Jantar", null, startsAt, true, typeId, null)
+        types.update(typeId, "Casa", "#2196F3")
+
+        OutboxCoalescer(opDao, tx, json).coalesceOutbox()
+
+        val queued = ops()
+        assertEquals(listOf(SyncCollections.EVENT_TYPES, SyncCollections.EVENTS), queued.map { it.collection })
+        assertEquals(listOf(OpType.CREATE, OpType.CREATE), queued.map { it.type })
+        assertTrue(queued[0].payloadJson.contains("\"name\":\"Casa\""))
+        assertTrue(queued[1].payloadJson.contains("\"all_day\":true"))
     }
 
     @Test
