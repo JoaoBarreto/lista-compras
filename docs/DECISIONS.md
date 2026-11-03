@@ -35,7 +35,7 @@ Registo das decisões de produto e técnicas, para acompanhar as alterações ao
 
 ## 2026-11-03 · Testes automáticos de interface em vez de testes manuais
 
-- **Decisão:** sempre que possível, os testes que o utilizador faria à mão (criar, editar, apagar, avisos, texto lido pelo TalkBack, comportamento offline) passam a ser testes instrumentados do Compose, escritos pelo assistente. O utilizador só liga o telemóvel por USB e corre `connectedDebugAndroidTest`. O emulador do computador não arranca (*segfault*), por isso não há alternativa sem telemóvel.
+- **Decisão:** sempre que possível, os testes que o utilizador faria à mão (criar, editar, apagar, avisos, texto lido pelo TalkBack, comportamento offline) passam a ser testes instrumentados do Compose, escritos pelo assistente. Com o telemóvel ligado por USB e depuração ativa, o assistente corre `adb` e `connectedDebugAndroidTest` por si; o utilizador só é chamado para o que exige uma pessoa (ver o ecrã, desbloquear, criar dados na app). O emulador do computador não arranca (*segfault*), por isso não há alternativa sem telemóvel.
 - **Fica manual:** o que um teste não vê (aspeto, modo escuro) e o que exige ver o sistema agir (alarme real a disparar, reinício do telemóvel).
 
 ## 2026-11-03 · Lembretes de eventos: um só alarme exato (9.8)
@@ -45,4 +45,4 @@ Registo das decisões de produto e técnicas, para acompanhar as alterações ao
 - **Marca (watermark):** guarda-se o instante até ao qual os lembretes já foram mostrados (`sync_meta.reminderWatermark`). O alarme é agendado a partir da marca, não de "agora", para um lembrete atrasado pelo Doze nunca se perder. Na primeira execução a marca é "agora" (instalar não repete o passado) e um relógio posto para trás faz a marca recuar.
 - **Reagendar quando:** qualquer mudança nos eventos (observador no Room), arranque do telemóvel, atualização da app, mudança de hora e de fuso. O fuso lê-se de novo a cada cálculo.
 - **Regras de tempo:** ver [DATA_MODEL](DATA_MODEL.md). Evento de dia inteiro: 09:00 locais. Evento com hora: um lembrete ainda se mostra até 2 horas depois do início.
-- **Por confirmar no telemóvel:** que o alarme sobrevive a `adb install -r` e a um reinício (a documentação oficial não o garante para a atualização).
+- **Confirmado no telemóvel (2026-11-03):** o alarme está lá, à mesma hora, depois de `adb install -r` (o recetor volta a agendá-lo) e depois de reiniciar o telemóvel.
