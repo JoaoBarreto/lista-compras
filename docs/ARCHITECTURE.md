@@ -28,6 +28,8 @@ ui  ──►  domain  ◄──  data
 | `data` | Room, API, SSE, sync, implementação do repositório | `domain` |
 | `di` | Módulos Hilt | todas |
 
+**Calendário (9.7):** `ui/calendar` (`CalendarViewModel` com um único `StateFlow<CalendarUiState>`: mês visível, eventos agrupados por dia, tipos, estado de sincronização). O agrupamento e as conversões de data são funções puras em `CalendarDates`. `ShoppingRoute` aloja os três separadores (`MainTab`: Compras, Tarefas, Calendário). Os limites dos campos (`CalendarLimits`) vivem no `domain` para os partilharem repositórios e editores.
+
 `ui` nunca importa classes de `data`. `domain` não importa Android.
 
 ## Fluxo de dados

@@ -24,10 +24,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.listacompras.R
-import com.example.listacompras.domain.model.ListKind
+import com.example.listacompras.ui.calendar.CalendarScreen
+import com.example.listacompras.ui.calendar.CalendarViewModel
+import com.example.listacompras.ui.main.MainTab
 
 /**
- * Hosts the two lists. Each tab is a complete screen with its own view model, so the text typed in
+ * Hosts the three tabs (two lists and the calendar). Each tab is a complete screen with its own view model, so the text typed in
  * one add field can never be added to the other list; the saveable state holder keeps each tab's
  * scroll position and typed text while the other one is shown.
  */
@@ -36,7 +38,7 @@ fun ShoppingRoute(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selected by rememberSaveable { mutableStateOf(ListKind.SHOPPING) }
+    var selected by rememberSaveable { mutableStateOf(MainTab.SHOPPING) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val settingsViewModel = hiltViewModel<SettingsViewModel>()
     val notificationsOn by settingsViewModel.shoppingNotifications.collectAsStateWithLifecycle()
@@ -46,23 +48,43 @@ fun ShoppingRoute(
     val stateHolder = rememberSaveableStateHolder()
 
     stateHolder.SaveableStateProvider(selected.name) {
-        val viewModel = hiltViewModel<ShoppingViewModel, ShoppingViewModel.Factory>(
-            key = selected.name,
-            creationCallback = { factory -> factory.create(selected) },
-        )
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
-        ShoppingScreen(
-            state = state,
-            texts = shoppingTexts(selected),
-            tabs = { ListTabs(selected = selected, onSelect = { selected = it }) },
-            onAdd = viewModel::onAdd,
-            onCheckedChange = viewModel::onCheckedChange,
-            onDelete = viewModel::onDelete,
-            onClearChecked = viewModel::onClearChecked,
-            onErrorAcknowledged = viewModel::onErrorAcknowledged,
-            onOpenSettings = { showSettings = true },
-            modifier = modifier,
-        )
+        val kind = selected.listKind
+        if (kind == null) {
+            val viewModel = hiltViewModel<CalendarViewModel>()
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            CalendarScreen(
+                state = state,
+                tabs = { MainTabs(selected = selected, onSelect = { selected = it }) },
+                onOpenSettings = { showSettings = true },
+                onErrorAcknowledged = viewModel::onErrorAcknowledged,
+                onPreviousMonth = viewModel::onPreviousMonth,
+                onNextMonth = viewModel::onNextMonth,
+                onToday = viewModel::onToday,
+                onSaveEvent = viewModel::onSaveEvent,
+                onDeleteEvent = viewModel::onDeleteEvent,
+                onSaveType = viewModel::onSaveType,
+                onDeleteType = viewModel::onDeleteType,
+                modifier = modifier,
+            )
+        } else {
+            val viewModel = hiltViewModel<ShoppingViewModel, ShoppingViewModel.Factory>(
+                key = selected.name,
+                creationCallback = { factory -> factory.create(kind) },
+            )
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            ShoppingScreen(
+                state = state,
+                texts = shoppingTexts(kind),
+                tabs = { MainTabs(selected = selected, onSelect = { selected = it }) },
+                onAdd = viewModel::onAdd,
+                onCheckedChange = viewModel::onCheckedChange,
+                onDelete = viewModel::onDelete,
+                onClearChecked = viewModel::onClearChecked,
+                onErrorAcknowledged = viewModel::onErrorAcknowledged,
+                onOpenSettings = { showSettings = true },
+                modifier = modifier,
+            )
+        }
     }
     if (showSettings) {
         SettingsDialog(
@@ -93,18 +115,19 @@ private fun rememberNotificationPermissionRequester(): () -> Unit {
 }
 
 @Composable
-private fun ListTabs(selected: ListKind, onSelect: (ListKind) -> Unit) {
+private fun MainTabs(selected: MainTab, onSelect: (MainTab) -> Unit) {
     PrimaryTabRow(selectedTabIndex = selected.ordinal) {
-        ListKind.entries.forEach { kind ->
+        MainTab.entries.forEach { tab ->
             Tab(
-                selected = kind == selected,
-                onClick = { onSelect(kind) },
+                selected = tab == selected,
+                onClick = { onSelect(tab) },
                 text = {
                     Text(
                         stringResource(
-                            when (kind) {
-                                ListKind.SHOPPING -> R.string.tab_shopping
-                                ListKind.TASKS -> R.string.tab_tasks
+                            when (tab) {
+                                MainTab.SHOPPING -> R.string.tab_shopping
+                                MainTab.TASKS -> R.string.tab_tasks
+                                MainTab.CALENDAR -> R.string.tab_calendar
                             },
                         ),
                     )

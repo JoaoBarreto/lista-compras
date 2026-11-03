@@ -10,6 +10,7 @@ import com.example.listacompras.data.remote.PocketBaseDates
 import com.example.listacompras.data.remote.dto.EventDto
 import com.example.listacompras.data.sync.SyncCollections
 import com.example.listacompras.domain.model.CalendarEvent
+import com.example.listacompras.domain.model.CalendarLimits
 import com.example.listacompras.domain.model.Reminder
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.repository.EventRepository

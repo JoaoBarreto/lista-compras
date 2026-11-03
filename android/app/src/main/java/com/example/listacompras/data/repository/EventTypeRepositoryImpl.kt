@@ -8,6 +8,7 @@ import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
 import com.example.listacompras.data.remote.dto.EventTypeDto
 import com.example.listacompras.data.sync.SyncCollections
+import com.example.listacompras.domain.model.CalendarLimits
 import com.example.listacompras.domain.model.EventType
 import com.example.listacompras.domain.model.SyncState
 import com.example.listacompras.domain.repository.EventTypeRepository

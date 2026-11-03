@@ -77,7 +77,7 @@ Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os t
 | `id` | text (auto, 15 chars `[a-z0-9]`) | sim | Pode ser enviado pelo cliente no create |
 | `title` | text (1–100) | sim | |
 | `notes` | text (≤ 500) | não | |
-| `starts_at` | date | sim | UTC; a app converte para o fuso do telemóvel |
+| `starts_at` | date | sim | UTC. **Evento com hora:** data e hora no fuso do telemóvel, convertidas para UTC. **Evento de dia inteiro (`all_day`):** a data à meia-noite UTC (`AAAA-MM-DD 00:00:00.000Z`), lida sempre em UTC, para cair no mesmo dia em qualquer fuso. |
 | `all_day` | bool | **não** (default `false`) | Se verdadeiro, a hora é ignorada. Não marcar "Nonempty": num bool significa "tem de ser `true`" |
 | `type` | relation → `event_types` (single) | sim | Sem cascade delete: a app impede apagar tipos em uso |
 | `reminder` | select (single) | não | `at_time`, `1h`, `1d`, `2d`, `3d`, `4d`, `5d`. Vazio = sem lembrete. (Um campo *number* não serve: o PocketBase devolve `0` quando está vazio, e `0` seria "à hora".) |
