@@ -4,7 +4,7 @@
 > - **Release instalada/mais recente:** v8 (`versionCode` 8, 1.3.0), com 9.1, 9.2, 9.2b e 9.3. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`).
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b (login com teclado e texto branco; a cor foi aplicada na v7).
 > - **9.3 implementada, por confirmar:** o utilizador instalou a v8 ("alterações efetuadas") mas ainda não reportou o teste das notificações. Perguntar o resultado primeiro: aviso com a app fechada (cerca de 15 min), itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez. Só então marcar `[x]`.
-> - **Servidor:** o utilizador diz ter criado/ajustado `event_types` e `events` segundo [DATA_MODEL](DATA_MODEL.md) (incluindo `reminder` como *select* `at_time`/`1h`/`1d`, `all_day` sem *Nonempty*, pattern da `color`, regras de API e os 3 tipos iniciais Família `#4CAF50`, Veronica `#E91E63`, João `#2196F3`). **Não verificado**: confirmar na 9.6 com a primeira chamada à API.
+> - **Servidor (verificado em 2026-11-03 por API com as duas contas):** `event_types` (3 tipos iniciais) e `events` respondem como em [DATA_MODEL](DATA_MODEL.md): ler 200, criar tipo e evento 200, cor inválida 400, `all_day=false` aceite, `reminder` aceita `at_time`/`1h`/`1d`/`2d`/`3d`/`4d`/`5d`, sem token `events` vem vazio. Corrigidos no servidor: campos `starts_at`/`type` (estavam `date`/`relation`) e opções do `reminder` (estavam numa só linha). Falta só confirmar as migrações PocketBase em git (9.5).
 > - **Release com base v2 instalada num telemóvel (2026-11-03):** migração com dados reais OK (abre, dados intactos, login e Terminar sessão/login OK, sincroniza). Por testar: segundo telemóvel (realtime entre os dois), modo offline e as notificações da 9.3 (precisam do outro telemóvel).
 - **9.4 feita em 2026-11-03:** `MigrationTest` e restantes testes instrumentados passaram no telemóvel (SM-S921B, Android 16). A primeira release com a base v2 será a v9: instalar primeiro num só telemóvel com `adb install -r` por cima da v8. Próximo: 9.5 (confirmar o servidor) e 9.6.
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
@@ -153,7 +153,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.5** Collections `event_types` e `events` no servidor
   - Criadas no dashboard do PocketBase (migração gerada e guardada em git), com os três tipos iniciais: Família, Veronica, João
   - ✔ Pedido sem token não devolve dados; ambos os utilizadores leem e escrevem; ver [DATA_MODEL](DATA_MODEL.md)
-  - Estado: collections criadas pelo utilizador no dashboard em 2026-11-02; campos e regras por confirmar contra o DATA_MODEL na 9.6. O utilizador aceita reinstalar a app nos dois telemóveis, mas a migração Room (9.4) mantém-se por boa prática.
+  - Estado: collections verificadas por API com as duas contas em 2026-11-03 (ver o ponto de situação). **Por confirmar:** migração PocketBase em git (o `server/` não está neste repositório).
 - [ ] **9.6** Camada de dados do calendário (offline-first)
   - `EventRepository`, `EventTypeRepository` (as entidades Room, DAOs, DTOs e mappers já existem desde a 9.4)
   - ✔ Testes: criar/editar/apagar evento e tipo offline gera a `pending_op` certa; pull e realtime aplicam eventos dos dois utilizadores
@@ -161,7 +161,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Agenda por dia/mês com `DatePicker`/`TimePicker` do Material 3 (sem biblioteca de calendário), criar/editar/apagar evento, escolher o tipo, gerir tipos (nome + cor), cada evento com a cor do seu tipo
   - ✔ Eventos coloridos por tipo, com texto do tipo também (a cor nunca é a única pista); modo escuro legível; TalkBack lê título, data e tipo; funciona offline
 - [ ] **9.8** Lembretes de eventos
-  - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (campo `reminder`: nenhuma / à hora / 1 h / 1 dia). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
+  - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (campo `reminder`: nenhuma / à hora / 1 h / 1 a 5 dias; o servidor aceita `at_time`, `1h`, `1d`, `2d`, `3d`, `4d`, `5d`). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
   - ✔ Evento criado pelo outro telemóvel é agendado aqui; apagar cancela o alarme; sobrevive a reinício do telemóvel
 - [ ] **9.9** Aviso de evento novo criado pelo outro
   - Reutiliza o `NotificationChecker` da 9.3

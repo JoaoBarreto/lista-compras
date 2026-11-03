@@ -80,7 +80,7 @@ Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os t
 | `starts_at` | date | sim | UTC; a app converte para o fuso do telemóvel |
 | `all_day` | bool | **não** (default `false`) | Se verdadeiro, a hora é ignorada. Não marcar "Nonempty": num bool significa "tem de ser `true`" |
 | `type` | relation → `event_types` (single) | sim | Sem cascade delete: a app impede apagar tipos em uso |
-| `reminder` | select (single) | não | `at_time`, `1h`, `1d`. Vazio = sem lembrete. (Um campo *number* não serve: o PocketBase devolve `0` quando está vazio, e `0` seria "à hora".) |
+| `reminder` | select (single) | não | `at_time`, `1h`, `1d`, `2d`, `3d`, `4d`, `5d`. Vazio = sem lembrete. (Um campo *number* não serve: o PocketBase devolve `0` quando está vazio, e `0` seria "à hora".) |
 | `created_by` | relation → `users` (single) | sim | Quem criou (a notificação ignora os próprios eventos) |
 | `created` / `updated` | autodate | sim | |
 
