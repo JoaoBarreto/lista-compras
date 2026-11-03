@@ -148,13 +148,13 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.4** Motor de sincronização para várias collections + migração Room v1→v2
   - `pending_ops` ganha a coluna `collection`; `OutboxProcessor`, `Reconciler`, `RealtimeEventApplier` e `OutboxCoalescer` passam a tratar `items`, `events` e `event_types`; subscrição realtime `events/*` e `event_types/*`
   - ✔ Migração Room testada (dados da v1 intactos, `schemas/2.json` em git); todos os testes de sync existentes continuam a passar; as Compras e Tarefas não mudam
-  - Estado: implementado em 2026-11-03 (esquema Room v2 completo: coluna `collection` + tabelas `events`/`event_types`, entidades, DAOs, DTOs, mappers; `MIGRATION_1_2` com o SQL de `schemas/2.json`; pull isolado, realtime por tópico com recuo para `items/*`). 168 testes unitários, `assembleDebug`, `compileDebugAndroidTestKotlin` e `lintDebug` passam. **Por verificar:** `MigrationTest` (instrumentado) não correu: sem dispositivo e o emulador do computador falha com *segfault*; correr `./gradlew connectedDebugAndroidTest` com o telemóvel ligado por USB (instala a app de teste `.debug` e não mexe nos dados da release).
+  - Estado: implementado em 2026-11-03 (esquema Room v2 completo: coluna `collection` + tabelas `events`/`event_types`, entidades, DAOs, DTOs, mappers; `MIGRATION_1_2` com o SQL de `schemas/2.json`; pull isolado, realtime por tópico com recuo para `items/*`). 168 testes unitários, `assembleDebug`, `compileDebugAndroidTestKotlin` e `lintDebug` passam. **Não fazer nenhuma release com a base v2 enquanto o `MigrationTest` não passar** (os telemóveis têm dados reais em v1; se a migração falhar a app falha ao arrancar). **Por verificar:** `MigrationTest` (instrumentado) não correu: sem dispositivo e o emulador do computador falha com *segfault*; correr `./gradlew connectedDebugAndroidTest` com o telemóvel ligado por USB (instala a app de teste `.debug` e não mexe nos dados da release).
 - [ ] **9.5** Collections `event_types` e `events` no servidor
   - Criadas no dashboard do PocketBase (migração gerada e guardada em git), com os três tipos iniciais: Família, Veronica, João
   - ✔ Pedido sem token não devolve dados; ambos os utilizadores leem e escrevem; ver [DATA_MODEL](DATA_MODEL.md)
   - Estado: collections criadas pelo utilizador no dashboard em 2026-11-02; campos e regras por confirmar contra o DATA_MODEL na 9.6. O utilizador aceita reinstalar a app nos dois telemóveis, mas a migração Room (9.4) mantém-se por boa prática.
 - [ ] **9.6** Camada de dados do calendário (offline-first)
-  - `EventRepository`, `EventTypeRepository`, entidades Room, DTOs, mappers
+  - `EventRepository`, `EventTypeRepository` (as entidades Room, DAOs, DTOs e mappers já existem desde a 9.4)
   - ✔ Testes: criar/editar/apagar evento e tipo offline gera a `pending_op` certa; pull e realtime aplicam eventos dos dois utilizadores
 - [ ] **9.7** Ecrã do calendário (3.º separador)
   - Agenda por dia/mês com `DatePicker`/`TimePicker` do Material 3 (sem biblioteca de calendário), criar/editar/apagar evento, escolher o tipo, gerir tipos (nome + cor), cada evento com a cor do seu tipo
