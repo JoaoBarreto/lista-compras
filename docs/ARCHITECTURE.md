@@ -32,6 +32,8 @@ ui  ──►  domain  ◄──  data
 
 **Lembretes (9.8):** `domain/reminder` tem as regras puras (`ReminderTimes`) e as interfaces `ReminderAlarms` e `ReminderNotifier`. `data/reminder/ReminderScheduler` observa os eventos no Room e mantém um só alarme do `AlarmManager`; `ReminderReceiver` trata o alarme, o arranque, a atualização da app e as mudanças de hora e de fuso. Ver [DECISIONS](DECISIONS.md).
 
+**Avisos de registos novos do outro (9.3, 9.9):** `NewRecordsWatcher` guarda as regras (marcas "visto" e "avisado", só do outro, só dados sincronizados, sem repetir); `ShoppingNotificationChecker` e `EventNotificationChecker` usam-no com marcas e notificadores próprios, `CompositeNewItemsTracker` junta-os para a `MainActivity` e o `NotificationCheckWorker` corre os dois, um independente do outro.
+
 `ui` nunca importa classes de `data`. `domain` não importa Android.
 
 ## Fluxo de dados

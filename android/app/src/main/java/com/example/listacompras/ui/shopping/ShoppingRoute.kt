@@ -42,6 +42,7 @@ fun ShoppingRoute(
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val settingsViewModel = hiltViewModel<SettingsViewModel>()
     val notificationsOn by settingsViewModel.shoppingNotifications.collectAsStateWithLifecycle()
+    val eventNotificationsOn by settingsViewModel.eventNotifications.collectAsStateWithLifecycle()
     val askPermission = rememberNotificationPermissionRequester()
     // Asked once, here, right after the first login: that is when the user learns the app can notify.
     LaunchedEffect(Unit) { if (settingsViewModel.shouldAskPermission()) askPermission() }
@@ -92,6 +93,11 @@ fun ShoppingRoute(
             onShoppingNotificationsChange = {
                 settingsViewModel.onShoppingNotificationsChange(it)
                 if (it) askPermission() // a no-op when already granted or blocked by the system
+            },
+            eventNotifications = eventNotificationsOn,
+            onEventNotificationsChange = {
+                settingsViewModel.onEventNotificationsChange(it)
+                if (it) askPermission()
             },
             onLogout = { showSettings = false; onLogout() },
             onDismiss = { showSettings = false },

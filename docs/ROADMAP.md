@@ -1,10 +1,10 @@
 # Roadmap
 
 > ## Ponto de situação (2026-11-03) · retomar aqui
-> - **Release instalada/mais recente:** v10 (`versionCode` 10, 1.5.0), com 9.1 a 9.8. A próxima release usa `versionCode` 11. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
+> - **Release instalada/mais recente:** v11 (`versionCode` 11, 1.6.0), com 9.1 a 9.9. A próxima release usa `versionCode` 12. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel), 9.7 e 9.8 (ver as limitações nas tarefas).
 > - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário.
-> - **Próximo:** 9.9 (aviso de evento novo criado pelo outro).
+> - **Próximo:** fim da Fase 9 (ver o que resta no ROADMAP); depois, o que o utilizador pedir.
 > - **Servidor (verificado em 2026-11-03):** `event_types` (3 tipos iniciais) e `events` conformes com [DATA_MODEL](DATA_MODEL.md). Sem ficheiro de migração PocketBase em git (deixou de ser critério).
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
@@ -168,6 +168,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.9** Aviso de evento novo criado pelo outro
   - Reutiliza o `NotificationChecker` da 9.3
   - ✔ Mesmas regras da 9.3 (só do outro, agrupado, sem repetição)
+  - Estado: implementado em 2026-11-03 (v11, 1.6.0, instalada no telemóvel). `NewRecordsWatcher` partilhado com a 9.3 (os testes da 9.3 passam sem alterações); `EventNotificationChecker` com marcas `lastSeenEventAt`/`lastNotifiedEventAt`; interruptor "Avisar-me de eventos novos no Calendário" nas Definições; canal e notificação próprios (id 1002, não mexem nos lembretes). 218 testes unitários com utilizador simulado (anunciado uma vez e agrupado, só do outro, pendentes ignorados, histórico que chega depois de um primeiro pull falhado não é anunciado, visto não avisa, interruptor desligado). **No telemóvel:** `NewRecordsNotificationOnDeviceTest` mostra a notificação real de evento novo do outro e de item novo (caminho da 9.3) e confirma que abrir a app a limpa; a verificação periódica está registada na release (`dumpsys jobscheduler`). **Por verificar com um evento real do outro telemóvel:** adiado por decisão do utilizador (tal como a 9.3).
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 

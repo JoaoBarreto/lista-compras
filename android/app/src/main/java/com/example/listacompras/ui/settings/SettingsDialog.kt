@@ -1,5 +1,6 @@
 package com.example.listacompras.ui.settings
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +23,8 @@ import com.example.listacompras.R
 fun SettingsDialog(
     shoppingNotifications: Boolean,
     onShoppingNotificationsChange: (Boolean) -> Unit,
+    eventNotifications: Boolean,
+    onEventNotificationsChange: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -29,22 +32,26 @@ fun SettingsDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_title)) },
         text = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .toggleable(
-                        value = shoppingNotifications,
-                        role = Role.Switch,
-                        onValueChange = onShoppingNotificationsChange,
-                    ),
-            ) {
-                Text(stringResource(R.string.settings_notify_shopping), modifier = Modifier.weight(1f))
-                Switch(checked = shoppingNotifications, onCheckedChange = null, modifier = Modifier.padding(start = 12.dp))
+            Column {
+                SwitchRow(R.string.settings_notify_shopping, shoppingNotifications, onShoppingNotificationsChange)
+                SwitchRow(R.string.settings_notify_events, eventNotifications, onEventNotificationsChange)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_close)) } },
         dismissButton = { TextButton(onClick = onLogout) { Text(stringResource(R.string.shopping_button_logout)) } },
     )
+}
+
+@Composable
+private fun SwitchRow(label: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+    ) {
+        Text(stringResource(label), modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = null, modifier = Modifier.padding(start = 12.dp))
+    }
 }

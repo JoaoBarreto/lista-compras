@@ -2,6 +2,7 @@ package com.example.listacompras.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.listacompras.domain.repository.EventNotificationSettings
 import com.example.listacompras.domain.repository.NotificationSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +14,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: NotificationSettings,
+    private val eventSettings: EventNotificationSettings,
 ) : ViewModel() {
 
     val shoppingNotifications: StateFlow<Boolean> =
@@ -20,6 +22,13 @@ class SettingsViewModel @Inject constructor(
 
     fun onShoppingNotificationsChange(enabled: Boolean) {
         viewModelScope.launch { settings.setShoppingEnabled(enabled) }
+    }
+
+    val eventNotifications: StateFlow<Boolean> =
+        eventSettings.eventsEnabled.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    fun onEventNotificationsChange(enabled: Boolean) {
+        viewModelScope.launch { eventSettings.setEventsEnabled(enabled) }
     }
 
     /** True the first time only; the caller then asks the system for the permission. */

@@ -105,4 +105,11 @@
     <string name="notif_event_public">Lembrete de evento</string>
     <string name="notif_event_text_timed">%1$s, %2$s · %3$s</string>
     <string name="notif_event_text_all_day">%1$s, todo o dia · %2$s</string>
+    <string name="settings_notify_events">Avisar-me de eventos novos no Calendário</string>
+    <string name="notif_channel_new_events">Eventos novos no Calendário</string>
+    <string name="notif_events_more">%1$s e mais %2$d</string>
+    <plurals name="notif_events_title">
+        <item quantity="one">%d evento novo no Calendário</item>
+        <item quantity="other">%d eventos novos no Calendário</item>
+    </plurals>
 </resources>
