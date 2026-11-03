@@ -1,10 +1,10 @@
 # Roadmap
 
 > ## Ponto de situação (2026-11-03) · retomar aqui
-> - **Release instalada/mais recente:** v11 (`versionCode` 11, 1.6.0), com 9.1 a 9.9. A próxima release usa `versionCode` 12. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
+> - **Release instalada/mais recente:** v12 (`versionCode` 12, 1.7.0), com 9.1 a 9.10 (grelha mensal). A próxima release usa `versionCode` 13. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel), 9.7 e 9.8 (ver as limitações nas tarefas).
 > - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário.
-> - **Estado da Fase 9:** concluída, exceto a 9.3 (precisa de um item real adicionado pelo outro telemóvel com a app fechada; por isso continua `[ ]`). Abertas fora da Fase 9: 6.2 (testes fora de casa e com rede instável) e 6.4 (implementada e coberta por testes unitários, falta marcar). A seguir: escolha do utilizador (extras possíveis: grelha mensal no calendário, modo escuro a verificar, itens da Fase 7).
+> - **Estado da Fase 9:** concluída, exceto a 9.3 (precisa de um item real adicionado pelo outro telemóvel com a app fechada; por isso continua `[ ]`). Abertas fora da Fase 9: 6.2 (testes fora de casa e com rede instável) e 6.4 (implementada e coberta por testes unitários, falta marcar). A seguir: escolha do utilizador (extras possíveis: itens da Fase 7).
 > - **Servidor (verificado em 2026-11-03):** `event_types` (3 tipos iniciais) e `events` conformes com [DATA_MODEL](DATA_MODEL.md). Sem ficheiro de migração PocketBase em git (deixou de ser critério).
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
@@ -169,6 +169,13 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Reutiliza o `NotificationChecker` da 9.3
   - ✔ Mesmas regras da 9.3 (só do outro, agrupado, sem repetição)
   - Estado: feito em 2026-11-03 (v11, 1.6.0, instalada no telemóvel). `NewRecordsWatcher` partilhado com a 9.3 (os testes da 9.3 passam sem alterações); `EventNotificationChecker` com marcas `lastSeenEventAt`/`lastNotifiedEventAt`; interruptor "Avisar-me de eventos novos no Calendário" nas Definições; canal e notificação próprios (id 1002, não mexem nos lembretes). 218 testes unitários com utilizador simulado (anunciado uma vez e agrupado, só do outro, pendentes ignorados, histórico que chega depois de um primeiro pull falhado não é anunciado, visto não avisa, interruptor desligado). **No telemóvel:** `NewRecordsNotificationOnDeviceTest` mostra a notificação real de evento novo do outro e de item novo (caminho da 9.3) e confirma que abrir a app a limpa; a verificação periódica está registada na release (`dumpsys jobscheduler`). **Por verificar com um evento real do outro telemóvel:** adiado por decisão do utilizador (tal como a 9.3).
+
+### Extras da Fase 9 (pedidos depois do fecho)
+
+- [x] **9.10** Grelha mensal no calendário
+  - Grelha de 7 colunas (segunda-feira primeiro) por cima da agenda; cada dia com o número e até 3 pontos com as cores dos tipos dos eventos; hoje marcado e dia selecionado destacado; tocar num dia seleciona-o e leva a agenda a esse dia; "Novo evento" propõe o dia selecionado
+  - ✔ A grelha aparece também em meses sem eventos; TalkBack lê a data completa, "hoje" e o número de eventos de cada dia, e anuncia o dia selecionado; a cor nunca é a única pista (a agenda por baixo diz o tipo)
+  - Estado: feito em 2026-11-03 (v12, 1.7.0, instalada). 224 testes unitários (células do mês: domingo com seis espaços e seis linhas, fevereiro de 28 dias a começar à segunda, cada dia na coluna do seu dia da semana; seleção e passagem de mês com o dia ajustado, 31 jan → 28 fev). No telemóvel: `CalendarScreenTest` (9 testes, os 6 anteriores sem alterações) e verificação visual por captura de ecrã, em modo escuro.
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 

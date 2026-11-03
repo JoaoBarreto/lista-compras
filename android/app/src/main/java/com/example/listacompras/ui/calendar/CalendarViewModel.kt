@@ -29,18 +29,21 @@ class CalendarViewModel @Inject constructor(
     private val clock: Clock,
 ) : ViewModel() {
 
-    private val month = MutableStateFlow(YearMonth.now(clock))
+    // The single source of truth: the month shown is the month of the selected day.
+    private val selected = MutableStateFlow(LocalDate.now(clock))
 
     val uiState: StateFlow<CalendarUiState> = combine(
         eventRepository.observeEvents(),
         typeRepository.observeTypes(),
         // Events must not wait for the first status (it depends on network callbacks).
         syncStatusProvider.status.onStart { emit(SyncStatus.Syncing) },
-        month,
-    ) { events, types, status, visibleMonth ->
+        selected,
+    ) { events, types, status, selectedDate ->
+        val visibleMonth = YearMonth.from(selectedDate)
         CalendarUiState(
             month = visibleMonth,
             today = LocalDate.now(clock),
+            selectedDate = selectedDate,
             zone = clock.zone,
             days = CalendarDates.groupByDay(events, visibleMonth, clock.zone),
             types = types,
@@ -50,14 +53,19 @@ class CalendarViewModel @Inject constructor(
     }.stateIn(
         viewModelScope,
         SharingStarted.Lazily,
-        CalendarUiState(month = month.value, today = LocalDate.now(clock), zone = clock.zone),
+        LocalDate.now(clock).let { today ->
+            CalendarUiState(month = YearMonth.from(today), today = today, selectedDate = today, zone = clock.zone)
+        },
     )
 
-    fun onPreviousMonth() = month.update { it.minusMonths(1) }
+    /** Moves the selected day by a month; a day that does not exist there is clamped (31 Jan → 28 Feb). */
+    fun onPreviousMonth() = selected.update { it.minusMonths(1) }
 
-    fun onNextMonth() = month.update { it.plusMonths(1) }
+    fun onNextMonth() = selected.update { it.plusMonths(1) }
 
-    fun onToday() { month.value = YearMonth.now(clock) }
+    fun onToday() { selected.value = LocalDate.now(clock) }
+
+    fun onSelectDate(date: LocalDate) { selected.value = date }
 
     /** [id] null creates. [onResult] gets false when the repository refused, so the editor can stay open. */
     fun onSaveEvent(id: String?, draft: EventDraft, onResult: (Boolean) -> Unit) {

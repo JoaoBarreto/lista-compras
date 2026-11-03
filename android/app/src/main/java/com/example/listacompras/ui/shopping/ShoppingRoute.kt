@@ -61,6 +61,7 @@ fun ShoppingRoute(
                 onPreviousMonth = viewModel::onPreviousMonth,
                 onNextMonth = viewModel::onNextMonth,
                 onToday = viewModel::onToday,
+                onSelectDate = viewModel::onSelectDate,
                 onSaveEvent = viewModel::onSaveEvent,
                 onDeleteEvent = viewModel::onDeleteEvent,
                 onSaveType = viewModel::onSaveType,

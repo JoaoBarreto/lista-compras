@@ -28,7 +28,7 @@ ui  ──►  domain  ◄──  data
 | `data` | Room, API, SSE, sync, implementação do repositório | `domain` |
 | `di` | Módulos Hilt | todas |
 
-**Calendário (9.7):** `ui/calendar` (`CalendarViewModel` com um único `StateFlow<CalendarUiState>`: mês visível, eventos agrupados por dia, tipos, estado de sincronização). O agrupamento e as conversões de data são funções puras em `CalendarDates`. `ShoppingRoute` aloja os três separadores (`MainTab`: Compras, Tarefas, Calendário). Os limites dos campos (`CalendarLimits`) vivem no `domain` para os partilharem repositórios e editores.
+**Calendário (9.7):** `ui/calendar` (`CalendarViewModel` com um único `StateFlow<CalendarUiState>`: mês visível, eventos agrupados por dia, tipos, estado de sincronização). O dia selecionado é a única fonte de verdade (o mês mostrado deriva dele) e `MonthGrid` desenha a grelha mensal, com a agenda por baixo. O agrupamento, as células do mês e as conversões de data são funções puras em `CalendarDates`. `ShoppingRoute` aloja os três separadores (`MainTab`: Compras, Tarefas, Calendário). Os limites dos campos (`CalendarLimits`) vivem no `domain` para os partilharem repositórios e editores.
 
 **Lembretes (9.8):** `domain/reminder` tem as regras puras (`ReminderTimes`) e as interfaces `ReminderAlarms` e `ReminderNotifier`. `data/reminder/ReminderScheduler` observa os eventos no Room e mantém um só alarme do `AlarmManager`; `ReminderReceiver` trata o alarme, o arranque, a atualização da app e as mudanças de hora e de fuso. Ver [DECISIONS](DECISIONS.md).
 

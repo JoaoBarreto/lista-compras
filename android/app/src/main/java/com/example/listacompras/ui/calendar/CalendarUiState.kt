@@ -11,6 +11,8 @@ import java.time.ZoneId
 data class CalendarUiState(
     val month: YearMonth,
     val today: LocalDate,
+    /** The day chosen in the month grid; the month shown is always the month of this date. */
+    val selectedDate: LocalDate,
     val zone: ZoneId,
     val days: List<DayGroup> = emptyList(),
     val types: List<EventType> = emptyList(),

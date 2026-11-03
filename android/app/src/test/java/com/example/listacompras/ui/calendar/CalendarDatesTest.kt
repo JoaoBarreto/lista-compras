@@ -89,4 +89,43 @@ class CalendarDatesTest {
         assertEquals(1, CalendarDates.groupByDay(listOf(e), YearMonth.of(2026, 12), newYork).size)
         assertEquals(0, CalendarDates.groupByDay(listOf(e), YearMonth.of(2027, 1), newYork).size)
     }
+
+    @Test
+    fun `a month that starts on a Sunday has six leading blanks and six rows`() {
+        val month = YearMonth.of(2026, 11) // 1 Nov 2026 is a Sunday
+        assertEquals(java.time.DayOfWeek.SUNDAY, month.atDay(1).dayOfWeek)
+
+        val cells = CalendarDates.monthCells(month)
+
+        assertEquals(42, cells.size)
+        assertEquals(6, cells.takeWhile { it == null }.size)
+        assertEquals(LocalDate.of(2026, 11, 1), cells[6])
+        assertEquals(LocalDate.of(2026, 11, 30), cells.last { it != null })
+        assertEquals(0, cells.size % 7)
+    }
+
+    @Test
+    fun `a 28-day February starting on a Monday is exactly four full rows`() {
+        val month = YearMonth.of(2027, 2) // 1 Feb 2027 is a Monday
+        assertEquals(java.time.DayOfWeek.MONDAY, month.atDay(1).dayOfWeek)
+        assertEquals(28, month.lengthOfMonth())
+
+        val cells = CalendarDates.monthCells(month)
+
+        assertEquals(28, cells.size)
+        assertEquals(LocalDate.of(2027, 2, 1), cells.first())
+        assertEquals(LocalDate.of(2027, 2, 28), cells.last())
+    }
+
+    @Test
+    fun `every cell sits in the column of its weekday and the header starts on Monday`() {
+        val header = CalendarDates.weekdays()
+        assertEquals(java.time.DayOfWeek.MONDAY, header.first())
+        assertEquals(java.time.DayOfWeek.SUNDAY, header.last())
+        listOf(YearMonth.of(2026, 11), YearMonth.of(2027, 2), YearMonth.of(2026, 12)).forEach { month ->
+            CalendarDates.monthCells(month).forEachIndexed { index, date ->
+                if (date != null) assertEquals(header[index % 7], date.dayOfWeek)
+            }
+        }
+    }
 }

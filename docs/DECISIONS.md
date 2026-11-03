@@ -46,3 +46,9 @@ Registo das decisões de produto e técnicas, para acompanhar as alterações ao
 - **Reagendar quando:** qualquer mudança nos eventos (observador no Room), arranque do telemóvel, atualização da app, mudança de hora e de fuso. O fuso lê-se de novo a cada cálculo.
 - **Regras de tempo:** ver [DATA_MODEL](DATA_MODEL.md). Evento de dia inteiro: 09:00 locais. Evento com hora: um lembrete ainda se mostra até 2 horas depois do início.
 - **Confirmado no telemóvel (2026-11-03):** o alarme está lá, à mesma hora, depois de `adb install -r` (o recetor volta a agendá-lo) e depois de reiniciar o telemóvel.
+
+## 2026-11-03 · Grelha mensal com a semana a começar à segunda-feira
+
+- **Decisão:** a grelha do calendário e o seu cabeçalho começam sempre na **segunda-feira** (constante `CalendarDates.WEEK_START`), em vez de seguir o idioma do telemóvel. Os dados de semana do idioma pt-PT podem indicar domingo, e o cabeçalho e as células têm de concordar sempre.
+- **Dia selecionado:** é a única fonte de verdade do ecrã; o mês mostrado é o mês desse dia. Mudar de mês ajusta o dia (31 jan → 28 fev → 28 mar), como faz o `java.time`.
+- **Os eventos de dia inteiro** aparecem no dia da sua data (lida em UTC), nunca recalculada no fuso do telemóvel.

@@ -142,4 +142,34 @@ class CalendarViewModelTest {
         assertEquals(1, acknowledged)
         assertEquals("Família", vm.uiState.first { it.types.isNotEmpty() }.types.single().name)
     }
+
+    @Test
+    fun `selecting a day sets the selected date and the month follows it`() = runTest {
+        val vm = viewModel()
+        assertEquals(LocalDate.of(2026, 11, 15), vm.uiState.first { !it.isLoading }.selectedDate)
+
+        vm.onSelectDate(LocalDate.of(2026, 12, 24))
+
+        val state = vm.uiState.first { it.selectedDate == LocalDate.of(2026, 12, 24) }
+        assertEquals(YearMonth.of(2026, 12), state.month)
+    }
+
+    @Test
+    fun `changing month clamps the selected day, as java time does (31 Jan to 28 Feb)`() = runTest {
+        val vm = viewModel()
+        vm.onSelectDate(LocalDate.of(2027, 1, 31))
+
+        vm.onNextMonth()
+        assertEquals(LocalDate.of(2027, 2, 28), vm.uiState.first { it.month == YearMonth.of(2027, 2) }.selectedDate)
+        vm.onNextMonth()
+        assertEquals(LocalDate.of(2027, 3, 28), vm.uiState.first { it.month == YearMonth.of(2027, 3) }.selectedDate)
+    }
+
+    @Test
+    fun `today selects the current day again`() = runTest {
+        val vm = viewModel()
+        vm.onSelectDate(LocalDate.of(2027, 5, 3))
+        vm.onToday()
+        assertEquals(LocalDate.of(2026, 11, 15), vm.uiState.first { it.selectedDate == LocalDate.of(2026, 11, 15) }.selectedDate)
+    }
 }

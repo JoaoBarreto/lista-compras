@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -16,8 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,6 +35,8 @@ import com.example.listacompras.R
 import com.example.listacompras.ui.shopping.EmptyMessage
 import com.example.listacompras.ui.shopping.SyncBanner
 import com.example.listacompras.ui.shopping.SyncStatusLabel
+import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 private const val NEW_EVENT = "\u0000new"
 
@@ -45,6 +51,7 @@ fun CalendarScreen(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onToday: () -> Unit,
+    onSelectDate: (LocalDate) -> Unit,
     onSaveEvent: (id: String?, draft: EventDraft, onResult: (Boolean) -> Unit) -> Unit,
     onDeleteEvent: (String) -> Unit,
     onSaveType: (id: String?, name: String, color: String, onResult: (Boolean) -> Unit) -> Unit,
@@ -83,17 +90,41 @@ fun CalendarScreen(
         },
     ) { innerPadding ->
         if (state.isLoading) return@Scaffold
-        if (state.days.isEmpty()) {
-            EmptyMessage(stringResource(R.string.calendar_empty_month), Modifier.fillMaxSize().padding(innerPadding))
-            return@Scaffold
+        val listState = rememberLazyListState()
+        val scope = rememberCoroutineScope()
+        // Back to the grid when the month changes.
+        LaunchedEffect(state.month) { listState.scrollToItem(0) }
+        // Position of each day's header in the list: item 0 is the grid.
+        val headerIndex = remember(state.days) {
+            var index = 1
+            state.days.associate { day -> (day.date to index).also { index += 1 + day.events.size } }
         }
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + FAB_CLEARANCE,
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
+            item(key = "grid") {
+                MonthGrid(
+                    month = state.month,
+                    today = state.today,
+                    selected = state.selectedDate,
+                    eventsByDay = state.days.associate { it.date to it.events },
+                    typesById = typesById,
+                    onSelect = { date ->
+                        onSelectDate(date)
+                        val index = headerIndex[date]
+                        val visible = listState.layoutInfo.visibleItemsInfo.any { it.index == index }
+                        if (index != null && !visible) scope.launch { listState.animateScrollToItem(index) }
+                    },
+                )
+            }
+            if (state.days.isEmpty()) {
+                item(key = "empty") { EmptyMessage(stringResource(R.string.calendar_empty_month)) }
+            }
             state.days.forEach { day ->
                 item(key = "day-${day.date}") {
                     Text(
@@ -121,7 +152,7 @@ fun CalendarScreen(
             EventEditorDialog(
                 event = event,
                 types = state.types,
-                today = state.today,
+                defaultDate = state.selectedDate,
                 zone = state.zone,
                 onSave = { draft, onResult -> onSaveEvent(event?.id, draft, onResult) },
                 onDelete = { event?.let { onDeleteEvent(it.id) } },

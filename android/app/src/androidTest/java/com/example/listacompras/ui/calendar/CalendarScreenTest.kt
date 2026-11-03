@@ -3,6 +3,8 @@ package com.example.listacompras.ui.calendar
 import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -18,6 +20,7 @@ import com.example.listacompras.data.local.AppDatabase
 import com.example.listacompras.data.local.entity.EventTypeEntity
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.remote.PocketBaseApiFactory
+import com.example.listacompras.data.repository.toDomain
 import com.example.listacompras.data.repository.CurrentUserProvider
 import com.example.listacompras.data.repository.EventRepositoryImpl
 import com.example.listacompras.data.repository.EventTypeRepositoryImpl
@@ -95,6 +98,7 @@ class CalendarScreenTest {
                 onPreviousMonth = viewModel::onPreviousMonth,
                 onNextMonth = viewModel::onNextMonth,
                 onToday = viewModel::onToday,
+                onSelectDate = viewModel::onSelectDate,
                 onSaveEvent = viewModel::onSaveEvent,
                 onDeleteEvent = viewModel::onDeleteEvent,
                 onSaveType = viewModel::onSaveType,
@@ -203,6 +207,41 @@ class CalendarScreenTest {
             "Família",
         )
         rule.onNodeWithContentDescription(expected).assertExists()
+    }
+
+    @Test
+    fun tappingADayAndCreatingAnEventUsesThatDay() {
+        rule.onNodeWithContentDescription(CalendarFormats.fullDate(LocalDate.of(2026, 11, 21)), substring = true).performClick()
+        rule.onNodeWithText(text(R.string.calendar_new_event)).performClick()
+        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Passeio")
+        rule.onNodeWithText(text(R.string.event_save)).performClick()
+
+        rule.waitUntil(TIMEOUT) { runBlocking { db.eventDao().getAll() }.isNotEmpty() }
+        val stored = runBlocking { db.eventDao().getAll() }.single()
+        assertEquals(LocalDate.of(2026, 11, 21), CalendarDates.dateOf(stored.toDomain(), zone))
+    }
+
+    @Test
+    fun aDayWithEventsSaysHowManyAndIsAnnouncedAsSelectedOnlyWhenChosen() {
+        seedEvent("Jantar", day = 20)
+        seedEvent("Cinema", day = 20, hour = 22)
+        val description = CalendarFormats.fullDate(LocalDate.of(2026, 11, 20))
+        rule.waitUntil(TIMEOUT) {
+            rule.onAllNodes(androidx.compose.ui.test.hasContentDescription("$description, 2 eventos")).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithContentDescription("$description, 2 eventos").assertIsNotSelected()
+        rule.onNodeWithContentDescription("$description, 2 eventos").performClick()
+        rule.onNodeWithContentDescription("$description, 2 eventos").assertIsSelected()
+    }
+
+    @Test
+    fun anEmptyMonthStillShowsTheGridAndTheEmptyMessage() {
+        rule.onNodeWithText(text(R.string.calendar_next_month)).performClick()
+        rule.waitUntil(TIMEOUT) {
+            rule.onAllNodes(androidx.compose.ui.test.hasText(text(R.string.calendar_empty_month))).fetchSemanticsNodes().isNotEmpty()
+        }
+        // The grid is still there: December 2026 has a 24th.
+        rule.onNodeWithContentDescription(CalendarFormats.fullDate(LocalDate.of(2026, 12, 24)), substring = true).assertExists()
     }
 
     private companion object {

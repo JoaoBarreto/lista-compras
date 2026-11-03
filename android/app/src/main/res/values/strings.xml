@@ -112,4 +112,9 @@
         <item quantity="one">%d evento novo no Calendário</item>
         <item quantity="other">%d eventos novos no Calendário</item>
     </plurals>
+    <plurals name="calendar_day_events">
+        <item quantity="one">%1$s, %2$d evento</item>
+        <item quantity="other">%1$s, %2$d eventos</item>
+    </plurals>
+    <string name="calendar_day_today">%1$s, hoje</string>
 </resources>

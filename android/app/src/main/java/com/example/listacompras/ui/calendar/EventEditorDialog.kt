@@ -43,7 +43,7 @@ import java.time.LocalTime
 fun EventEditorDialog(
     event: CalendarEvent?,
     types: List<EventType>,
-    today: LocalDate,
+    defaultDate: LocalDate,
     zone: java.time.ZoneId,
     onSave: (EventDraft, (Boolean) -> Unit) -> Unit,
     onDelete: () -> Unit,
@@ -52,7 +52,7 @@ fun EventEditorDialog(
     var title by rememberSaveable { mutableStateOf(event?.title.orEmpty()) }
     var notes by rememberSaveable { mutableStateOf(event?.notes.orEmpty()) }
     var epochDay by rememberSaveable {
-        mutableLongStateOf((event?.let { CalendarDates.dateOf(it, zone) } ?: today).toEpochDay())
+        mutableLongStateOf((event?.let { CalendarDates.dateOf(it, zone) } ?: defaultDate).toEpochDay())
     }
     var minuteOfDay by rememberSaveable {
         mutableIntStateOf((event?.let { CalendarDates.timeOf(it, zone) } ?: LocalTime.of(9, 0)).toSecondOfDay() / 60)
