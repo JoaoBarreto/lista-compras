@@ -32,3 +32,17 @@ Registo das decisões de produto e técnicas, para acompanhar as alterações ao
 - **Decisão:** a 9.4 cria já todo o esquema v2 (coluna `collection`, tabelas `events` e `event_types`, entidades, DAOs, DTOs), em vez de só a coluna. Assim há **uma só migração** (1→2) e o motor de sync já tem onde escrever os registos do calendário. Os repositórios e a UI ficam para a 9.6/9.7.
 - **Realtime:** a app subscreve `items/*`, `event_types/*` e `events/*`; se o servidor recusar com 4xx, volta a subscrever só `items/*`. O pull das collections do calendário é isolado do de `items`. Motivo: o servidor do calendário ainda não foi verificado e as Compras/Tarefas nunca podem perder o realtime por causa dele.
 - **Para a 9.6:** um registo de `events` que não se descodifica faz o pull dessa collection falhar sempre (é registado e ignorado); decidir se se salta só esse registo. O aplicador de eventos passou a ignorar qualquer exceção (antes, uma falha de base de dados num evento de item forçava reconexão e novo pull).
+
+## 2026-11-03 · Testes automáticos de interface em vez de testes manuais
+
+- **Decisão:** sempre que possível, os testes que o utilizador faria à mão (criar, editar, apagar, avisos, texto lido pelo TalkBack, comportamento offline) passam a ser testes instrumentados do Compose, escritos pelo assistente. O utilizador só liga o telemóvel por USB e corre `connectedDebugAndroidTest`. O emulador do computador não arranca (*segfault*), por isso não há alternativa sem telemóvel.
+- **Fica manual:** o que um teste não vê (aspeto, modo escuro) e o que exige ver o sistema agir (alarme real a disparar, reinício do telemóvel).
+
+## 2026-11-03 · Lembretes de eventos: um só alarme exato (9.8)
+
+- **Decisão:** a app mantém **um único alarme** (`AlarmManager`), o do próximo lembrete, calculado a partir do Room. Ao disparar, mostra o que estiver em atraso e agenda o seguinte. Editar, apagar, pull e realtime só obrigam a recalcular; não há alarmes por evento para seguir ou cancelar.
+- **Permissão:** `USE_EXACT_ALARM` (Android 13+, concedida na instalação e irrevogável) e `SCHEDULE_EXACT_ALARM` só até ao Android 12L. A app é de uso pessoal, sem Play Store, por isso a política da Play não se aplica. Se alguma vez não for permitido, usa `setAndAllowWhileIdle`.
+- **Marca (watermark):** guarda-se o instante até ao qual os lembretes já foram mostrados (`sync_meta.reminderWatermark`). O alarme é agendado a partir da marca, não de "agora", para um lembrete atrasado pelo Doze nunca se perder. Na primeira execução a marca é "agora" (instalar não repete o passado) e um relógio posto para trás faz a marca recuar.
+- **Reagendar quando:** qualquer mudança nos eventos (observador no Room), arranque do telemóvel, atualização da app, mudança de hora e de fuso. O fuso lê-se de novo a cada cálculo.
+- **Regras de tempo:** ver [DATA_MODEL](DATA_MODEL.md). Evento de dia inteiro: 09:00 locais. Evento com hora: um lembrete ainda se mostra até 2 horas depois do início.
+- **Por confirmar no telemóvel:** que o alarme sobrevive a `adb install -r` e a um reinício (a documentação oficial não o garante para a atualização).

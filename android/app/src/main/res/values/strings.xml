@@ -101,4 +101,8 @@
     <string name="color_cyan">Turquesa</string>
     <string name="color_brown">Castanho</string>
     <string name="color_grey">Cinzento</string>
+    <string name="notif_channel_events">Lembretes de eventos</string>
+    <string name="notif_event_public">Lembrete de evento</string>
+    <string name="notif_event_text_timed">%1$s, %2$s · %3$s</string>
+    <string name="notif_event_text_all_day">%1$s, todo o dia · %2$s</string>
 </resources>

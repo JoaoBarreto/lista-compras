@@ -84,6 +84,8 @@ Tipos de evento do calendário (Fase 9). Criada no dashboard do PocketBase; os t
 | `created_by` | relation → `users` (single) | sim | Quem criou (a notificação ignora os próprios eventos) |
 | `created` / `updated` | autodate | sim | |
 
+**Lembretes (9.8):** o `reminder` é relativo ao início. Evento com hora: `at_time` = no início, `1h` = 1 hora antes, `1d` a `5d` = N dias antes à mesma hora local. Evento de dia inteiro: a referência é as **09:00 locais** da data (`at_time` = 09:00, `1h` = 08:00, `1d` = 09:00 do dia anterior). Um lembrete só se mostra enquanto o evento não acabou: até 2 horas depois do início (eventos com hora) ou até ao fim do dia (dia inteiro).
+
 **Índice:** `(starts_at)`. **Regras:** como `items`, com `create` a exigir `@request.body.created_by = @request.auth.id`.
 
 **Room (versão 2, criada na 9.4 com as entidades, DAOs e DTOs; repositórios e UI ficam para a 9.6/9.7):** `events` e `event_types` espelham estas tabelas (+ `syncState`); `pending_ops` ganha a coluna `collection` (`items`|`events`|`event_types`) e `itemId` passa a significar "id do registo". `sync_meta` ganha a chave `lastNotifiedEventAt` na 9.9 (o marcador das Compras já existe desde a 9.3). O pull de `events`/`event_types` é isolado do de `items`: uma falha numa collection do calendário (em falta, sem permissão, resposta inválida) é registada e ignorada, sem afetar as Compras e Tarefas. A migração 1→2 é obrigatória (sem `fallbackToDestructiveMigration`) e o `schemas/2.json` vai para git.

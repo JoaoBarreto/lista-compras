@@ -30,6 +30,8 @@ ui  ──►  domain  ◄──  data
 
 **Calendário (9.7):** `ui/calendar` (`CalendarViewModel` com um único `StateFlow<CalendarUiState>`: mês visível, eventos agrupados por dia, tipos, estado de sincronização). O agrupamento e as conversões de data são funções puras em `CalendarDates`. `ShoppingRoute` aloja os três separadores (`MainTab`: Compras, Tarefas, Calendário). Os limites dos campos (`CalendarLimits`) vivem no `domain` para os partilharem repositórios e editores.
 
+**Lembretes (9.8):** `domain/reminder` tem as regras puras (`ReminderTimes`) e as interfaces `ReminderAlarms` e `ReminderNotifier`. `data/reminder/ReminderScheduler` observa os eventos no Room e mantém um só alarme do `AlarmManager`; `ReminderReceiver` trata o alarme, o arranque, a atualização da app e as mudanças de hora e de fuso. Ver [DECISIONS](DECISIONS.md).
+
 `ui` nunca importa classes de `data`. `domain` não importa Android.
 
 ## Fluxo de dados

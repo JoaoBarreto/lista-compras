@@ -1,10 +1,10 @@
 # Roadmap
 
 > ## Ponto de situação (2026-11-03) · retomar aqui
-> - **Release instalada/mais recente:** v9 (`versionCode` 9, 1.4.0), com 9.1 a 9.7. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
+> - **Release instalada/mais recente:** v9 (`versionCode` 9, 1.4.0), com 9.1 a 9.7. Em preparação: v10 (1.5.0) com a 9.8. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel) e 9.7 (ver as limitações na tarefa).
 > - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário.
-> - **Próximo:** 9.8 (lembretes de eventos).
+> - **Próximo:** verificar a 9.8 no telemóvel; depois 9.9 (aviso de evento novo criado pelo outro).
 > - **Servidor (verificado em 2026-11-03):** `event_types` (3 tipos iniciais) e `events` conformes com [DATA_MODEL](DATA_MODEL.md). Sem ficheiro de migração PocketBase em git (deixou de ser critério).
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
@@ -164,6 +164,7 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] **9.8** Lembretes de eventos
   - `AlarmManager` local a partir do Room, reagendado após sync, edição, apagar e reboot (`RECEIVE_BOOT_COMPLETED`); antecedência escolhida no evento (campo `reminder`: nenhuma / à hora / 1 h / 1 a 5 dias; o servidor aceita `at_time`, `1h`, `1d`, `2d`, `3d`, `4d`, `5d`). Confirmar antes as regras atuais de alarmes exatos (Android 13/14).
   - ✔ Evento criado pelo outro telemóvel é agendado aqui; apagar cancela o alarme; sobrevive a reinício do telemóvel
+  - Estado: implementado em 2026-11-03 (v10, 1.5.0), **por verificar no telemóvel**. Um só alarme exato, reagendado a partir do Room (ver [DECISIONS](DECISIONS.md)). Coberto por testes unitários: evento do outro utilizador fica agendado, apagar o último cancela o alarme, lembrete atrasado pelo Doze não se perde, sem repetições, fuso lido de novo. **Verificação no telemóvel (alarme real e reinício):** `adb shell dumpsys alarm | grep listacompras` mostra o alarme depois de criar um evento com lembrete e deixa de o mostrar depois de o apagar; repetir após reiniciar o telemóvel. O teste com o segundo telemóvel fica adiado por decisão do utilizador.
 - [ ] **9.9** Aviso de evento novo criado pelo outro
   - Reutiliza o `NotificationChecker` da 9.3
   - ✔ Mesmas regras da 9.3 (só do outro, agrupado, sem repetição)
