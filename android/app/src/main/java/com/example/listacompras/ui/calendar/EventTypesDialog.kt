@@ -53,6 +53,11 @@ fun EventTypesDialog(
     var inUse by rememberSaveable { mutableStateOf(false) }
     val editedType = types.firstOrNull { it.id == editing }
 
+    // A type deleted meanwhile (for example on the other phone) closes its form instead of creating a duplicate.
+    if (editing != null && editing != NEW_TYPE && editedType == null) {
+        editing = null
+        return
+    }
     if (editing != null) {
         TypeFormDialog(
             type = editedType,
