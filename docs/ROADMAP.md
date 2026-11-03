@@ -5,7 +5,8 @@
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b (login com teclado e texto branco; a cor foi aplicada na v7).
 > - **9.3 implementada, por confirmar:** o utilizador instalou a v8 ("alterações efetuadas") mas ainda não reportou o teste das notificações. Perguntar o resultado primeiro: aviso com a app fechada (cerca de 15 min), itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez. Só então marcar `[x]`.
 > - **Servidor:** o utilizador diz ter criado/ajustado `event_types` e `events` segundo [DATA_MODEL](DATA_MODEL.md) (incluindo `reminder` como *select* `at_time`/`1h`/`1d`, `all_day` sem *Nonempty*, pattern da `color`, regras de API e os 3 tipos iniciais Família `#4CAF50`, Veronica `#E91E63`, João `#2196F3`). **Não verificado**: confirmar na 9.6 com a primeira chamada à API.
-> - **9.4 feita em 2026-11-03:** `MigrationTest` e restantes testes instrumentados passaram no telemóvel (SM-S921B, Android 16). A primeira release com a base v2 será a v9: instalar primeiro num só telemóvel com `adb install -r` por cima da v8. Próximo: 9.5 (confirmar o servidor) e 9.6.
+> - **Release com base v2 instalada num telemóvel (2026-11-03):** migração com dados reais OK (abre, dados intactos, login e Terminar sessão/login OK, sincroniza). Por testar: segundo telemóvel (realtime entre os dois), modo offline e as notificações da 9.3 (precisam do outro telemóvel).
+- **9.4 feita em 2026-11-03:** `MigrationTest` e restantes testes instrumentados passaram no telemóvel (SM-S921B, Android 16). A primeira release com a base v2 será a v9: instalar primeiro num só telemóvel com `adb install -r` por cima da v8. Próximo: 9.5 (confirmar o servidor) e 9.6.
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
 
