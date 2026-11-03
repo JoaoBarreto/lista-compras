@@ -3,8 +3,8 @@
 > ## Ponto de situação (2026-11-03) · retomar aqui
 > - **Release instalada/mais recente:** v12 (`versionCode` 12, 1.7.0), com 9.1 a 9.10 (grelha mensal). A próxima release usa `versionCode` 13. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel), 9.7 e 9.8 (ver as limitações nas tarefas).
-> - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário.
-> - **Estado da Fase 9:** concluída, exceto a 9.3 (precisa de um item real adicionado pelo outro telemóvel com a app fechada; por isso continua `[ ]`). Abertas fora da Fase 9: 6.2 (testes fora de casa e com rede instável) e 6.4 (implementada e coberta por testes unitários, falta marcar). A seguir: escolha do utilizador (extras possíveis: itens da Fase 7).
+> - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário; e a lista de verificação da 6.2 (criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item; dados móveis e rede instável).
+> - **Estado da Fase 9:** concluída, exceto a 9.3 (precisa de um item real adicionado pelo outro telemóvel com a app fechada; por isso continua `[ ]`). Fechadas a pedido: 6.4 (testada no telemóvel) e 6.2 (sem o teste em dispositivo, ver a tarefa). A seguir: escolha do utilizador (extras possíveis: itens da Fase 7).
 > - **Servidor (verificado em 2026-11-03):** `event_types` (3 tipos iniciais) e `events` conformes com [DATA_MODEL](DATA_MODEL.md). Sem ficheiro de migração PocketBase em git (deixou de ser critério).
 > - **Lembretes de método:** uma tarefa de cada vez; commit por tarefa; não mexer em `applicationId`/pacote/nome da Room; textos em `strings.xml` PT-PT; `server/` não está neste repositório.
 > - Decisões e porquê: [DECISIONS](DECISIONS.md).
@@ -98,15 +98,16 @@ Docs: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md)
   - Confirmar a última versão estável de cada uma (core-ktx, activity-compose, Compose BOM, navigation-compose, Kotlin, kotlinx-serialization-json, Gradle) antes de fixar
   - ✔ `testDebugUnitTest`, `assembleDebug` e `lintDebug` passam; app testada no telemóvel
   - Verificado no telemóvel em 2026-11-02 (um telemóvel). Atualizado em 3 commits (AndroidX; Gradle 9.8.2; Kotlin 2.4.21 + kotlinx-serialization 1.12.0).
-- [ ] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
+- [x] **6.2** Testes em dispositivo real fora de casa (dados móveis) e com rede instável
   - ✔ Lista de verificação: criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item
+  - Estado: **fechada por decisão do utilizador em 2026-11-03, sem o teste em dispositivo.** A lógica está coberta por testes unitários do motor de sincronização (fila, fusão de operações, repetição após perda de resposta, conflitos), mas nunca foi verificada fora de casa nem com dois telemóveis. A lista de verificação acima passa para o ponto "por testar quando houver o segundo telemóvel" do ponto de situação.
 - [x] **6.3** Build release assinada e instalação nos dois telemóveis
   - ✔ Atualização por cima mantém os dados
   - Estado: implementado (`applicationId` `com.joaobarreto.listacompras`, assinatura por `keystore.properties`, APK em `android/app/build/outputs/apk/release/app-release.apk`, assinatura confirmada com `apksigner`). Testado em 2026-11-02 com um telemóvel: instalação limpa e atualização por cima (v1 → v2, `versionCode` 2) mantiveram o login e os itens já sincronizados. Um item adicionado offline na v1 não apareceu na v2; um force-stop offline mantém o item pendente; a perda limitou-se à instalação por cima (aceite pelo utilizador). Fechada em 2026-11-02: instalada e a funcionar no segundo telemóvel (confirmado pelo utilizador).
 
-- [ ] **6.4** Impedir a adição enquanto ainda não há lista ativa (primeira execução sem servidor alcançado)
+- [x] **6.4** Impedir a adição enquanto ainda não há lista ativa (primeira execução sem servidor alcançado)
   - ✔ Sem lista: botão desativado, o texto escrito mantém-se no campo e aparece "A obter a lista do servidor…"; com lista, tudo como antes
-  - Estado: implementado (`ListRepository.hasActiveList`, `ShoppingUiState.canAdd`); testes passam. Difícil de reproduzir no telemóvel (só ocorre antes de a lista ser obtida na primeira execução); verificado por testes unitários.
+  - Estado: feito (`ListRepository.hasActiveList`, `ShoppingUiState.canAdd`). Testes unitários e, em 2026-11-03, `ShoppingAddWithoutListTest` no telemóvel (SM-S921B): sem lista o botão "Adicionar" está desativado, o texto escrito mantém-se no campo e aparece "A obter a lista do servidor…"; com lista, adicionar chama `onAdd`.
 
 ## Fase 8 · Tarefas da casa
 Decisões do utilizador (2026-11-02): dois separadores fixos (Compras e Tarefas, abre em Compras); a tarefa só tem nome e feita/por fazer; partilhada pelas duas contas. Desenho em [DATA_MODEL](DATA_MODEL.md#collection-lists). Sem alterações de esquema (servidor ou Room).
