@@ -7,7 +7,7 @@ import com.example.listacompras.domain.model.SyncState
 
 /**
  * Local mirror of a PocketBase `events` record. Times are epoch millis. [reminder] keeps the raw
- * server value (`at_time`, `1h`, `1d`) or null for none.
+ * server value (`at_time`, `1h`, `1d`, `2d`..`5d`) or null for none.
  */
 @Entity(tableName = "events", indices = [Index("startsAt")])
 data class EventEntity(

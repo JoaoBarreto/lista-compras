@@ -24,6 +24,7 @@ class FakeEventDao : EventDao {
     override fun observeAll(): Flow<List<EventEntity>> = rows.map { it.values.toList() }
     override suspend fun getAll() = rows.value.values.toList()
     override suspend fun getById(id: String) = rows.value[id]
+    override suspend fun countByType(typeId: String) = rows.value.values.count { it.typeId == typeId }
     override suspend fun upsert(event: EventEntity) { rows.value += event.id to event }
     override suspend fun upsertAll(events: List<EventEntity>) { rows.value += events.associateBy { it.id } }
     override suspend fun deleteById(id: String) { rows.value -= id }

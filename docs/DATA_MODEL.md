@@ -108,6 +108,15 @@ data class ShoppingItem(
     val syncState: SyncState,
 )
 
+data class CalendarEvent(
+    val id: String, val title: String, val notes: String?, val startsAt: Instant, val allDay: Boolean,
+    val typeId: String, val reminder: Reminder?, val createdBy: String, val updatedAt: Instant, val syncState: SyncState,
+)
+data class EventType(val id: String, val name: String, val color: String /* #RRGGBB */, val syncState: SyncState)
+
+// `slug` is the server value of `events.reminder`; Reminder.fromSlug() returns null for unknown/blank.
+enum class Reminder(val slug: String) { AT_TIME("at_time"), ONE_HOUR("1h"), ONE_DAY("1d"), TWO_DAYS("2d"), THREE_DAYS("3d"), FOUR_DAYS("4d"), FIVE_DAYS("5d") }
+
 // `slug` is the server value (e.g. DAIRY("dairy")); Category.fromSlug() returns null for unknown/blank.
 enum class Category(val slug: String) {
     OILS_SAUCES, DRINKS, MEAT, DELI, FROZEN, FRUIT, PERSONAL_CARE, DAIRY, CLEANING,

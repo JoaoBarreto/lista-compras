@@ -154,9 +154,10 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Criadas no dashboard do PocketBase, com os três tipos iniciais: Família, Veronica, João
   - ✔ Pedido sem token não devolve dados; ambos os utilizadores leem e escrevem; ver [DATA_MODEL](DATA_MODEL.md)
   - Estado: collections verificadas por API com as duas contas em 2026-11-03 (ver o ponto de situação). O ficheiro de migração PocketBase em git deixou de ser critério (decisão do utilizador: o servidor corre no mini-PC, tem backups e não é reconstruído a partir do git).
-- [ ] **9.6** Camada de dados do calendário (offline-first)
+- [x] **9.6** Camada de dados do calendário (offline-first)
   - `EventRepository`, `EventTypeRepository` (as entidades Room, DAOs, DTOs e mappers já existem desde a 9.4)
   - ✔ Testes: criar/editar/apagar evento e tipo offline gera a `pending_op` certa; pull e realtime aplicam eventos dos dois utilizadores
+  - Estado: feito em 2026-11-03. `EventRepositoryImpl` e `EventTypeRepositoryImpl` (interfaces no `domain`) escrevem no Room e na `pending_ops` (coleção explícita) na mesma transação; validam como o servidor (título ≤100, notas ≤500, nome ≤30, cor `#RRGGBB`) e recusam apagar um tipo em uso e eventos com tipo desconhecido; o UPDATE envia todos os campos editáveis (`""` limpa notas/lembrete). 180 testes unitários, `assembleDebug` e `lintDebug` passam; esquema Room inalterado (v2).
 - [ ] **9.7** Ecrã do calendário (3.º separador)
   - Agenda por dia/mês com `DatePicker`/`TimePicker` do Material 3 (sem biblioteca de calendário), criar/editar/apagar evento, escolher o tipo, gerir tipos (nome + cor), cada evento com a cor do seu tipo
   - ✔ Eventos coloridos por tipo, com texto do tipo também (a cor nunca é a única pista); modo escuro legível; TalkBack lê título, data e tipo; funciona offline

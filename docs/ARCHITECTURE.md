@@ -24,7 +24,7 @@ ui  ──►  domain  ◄──  data
 | Camada | Conteúdo | Pode depender de |
 |---|---|---|
 | `ui` | Composables, ViewModels, UiState, navegação | `domain` |
-| `domain` | Modelos (`ShoppingItem`), interface `ItemRepository` | nada (Kotlin puro) |
+| `domain` | Modelos (`ShoppingItem`, `CalendarEvent`, `EventType`, `Reminder`), interfaces `ItemRepository`, `EventRepository`, `EventTypeRepository` | nada (Kotlin puro) |
 | `data` | Room, API, SSE, sync, implementação do repositório | `domain` |
 | `di` | Módulos Hilt | todas |
 

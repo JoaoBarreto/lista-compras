@@ -193,6 +193,17 @@ class CalendarSyncTest {
     }
 
     @Test
+    fun `pull and realtime apply events created by the other user`() = runTest {
+        val other = eventJson("e1", "Do outro").replace("\"created_by\":\"u\"", "\"created_by\":\"other\"")
+        api.records[SyncCollections.EVENTS] = linkedMapOf("e1" to obj(other))
+        reconciler.pull()
+        assertEquals("other", eventDao.getById("e1")!!.createdBy)
+
+        applier.apply("""{"action":"create","record":${other.replace("e1", "e2")}}""", "events/*")
+        assertEquals("other", eventDao.getById("e2")!!.createdBy)
+    }
+
+    @Test
     fun `an item pending op does not protect an event with the same id`() = runTest {
         opDao.insert(op(SyncCollections.ITEMS, "e1", OpType.UPDATE))
 

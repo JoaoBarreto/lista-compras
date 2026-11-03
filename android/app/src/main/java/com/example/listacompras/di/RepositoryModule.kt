@@ -11,6 +11,8 @@ import com.example.listacompras.data.remote.PocketBaseApi
 import com.example.listacompras.data.remote.PocketBaseApiFactory
 import com.example.listacompras.data.repository.ActiveListProvider
 import com.example.listacompras.data.repository.CurrentUserProvider
+import com.example.listacompras.data.repository.EventRepositoryImpl
+import com.example.listacompras.data.repository.EventTypeRepositoryImpl
 import com.example.listacompras.data.repository.ItemRepositoryImpl
 import com.example.listacompras.data.repository.ListRepositoryImpl
 import com.example.listacompras.data.repository.RoomTransactionRunner
@@ -25,6 +27,8 @@ import com.example.listacompras.data.sync.WorkManagerSyncScheduler
 import android.content.Context
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.example.listacompras.domain.repository.EventRepository
+import com.example.listacompras.domain.repository.EventTypeRepository
 import com.example.listacompras.domain.repository.ItemRepository
 import com.example.listacompras.domain.repository.ListRepository
 import dagger.Module
@@ -129,6 +133,46 @@ object RepositoryModule {
         pendingOpDao = pendingOpDao,
         transactions = transactions,
         activeList = activeList,
+        currentUser = currentUser,
+        json = PocketBaseApiFactory.json,
+        clock = Clock.systemUTC(),
+        syncScheduler = syncScheduler,
+        newId = ::newRecordId,
+    )
+
+    @Provides
+    @Singleton
+    fun provideEventTypeRepository(
+        eventTypeDao: EventTypeDao,
+        eventDao: EventDao,
+        pendingOpDao: PendingOpDao,
+        transactions: TransactionRunner,
+        syncScheduler: SyncScheduler,
+    ): EventTypeRepository = EventTypeRepositoryImpl(
+        eventTypeDao = eventTypeDao,
+        eventDao = eventDao,
+        pendingOpDao = pendingOpDao,
+        transactions = transactions,
+        json = PocketBaseApiFactory.json,
+        clock = Clock.systemUTC(),
+        syncScheduler = syncScheduler,
+        newId = ::newRecordId,
+    )
+
+    @Provides
+    @Singleton
+    fun provideEventRepository(
+        eventDao: EventDao,
+        eventTypeDao: EventTypeDao,
+        pendingOpDao: PendingOpDao,
+        transactions: TransactionRunner,
+        currentUser: CurrentUserProvider,
+        syncScheduler: SyncScheduler,
+    ): EventRepository = EventRepositoryImpl(
+        eventDao = eventDao,
+        eventTypeDao = eventTypeDao,
+        pendingOpDao = pendingOpDao,
+        transactions = transactions,
         currentUser = currentUser,
         json = PocketBaseApiFactory.json,
         clock = Clock.systemUTC(),

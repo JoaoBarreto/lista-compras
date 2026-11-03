@@ -18,6 +18,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun getById(id: String): EventEntity?
 
+    @Query("SELECT COUNT(*) FROM events WHERE typeId = :typeId")
+    suspend fun countByType(typeId: String): Int
+
     @Upsert
     suspend fun upsert(event: EventEntity)
 
