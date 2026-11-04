@@ -1,5 +1,8 @@
 # Roadmap
 
+> ## PROJETO FECHADO por ora (2026-11-04)
+> - A release v14 (1.8.1) foi instalada no telemóvel da esposa: instalou, sincronizou e está tudo ok. Testes dados por concluídos e projeto fechado a pedido do utilizador, "pelo menos para já". O que ficou `[ ]` (9.3, segundo telemóvel, modo offline, Fase 7) fica adiado, não em curso.
+
 > ## Ponto de situação (2026-11-03) · retomar aqui
 > - **Release instalada/mais recente:** v12 (`versionCode` 12, 1.7.0), com 9.1 a 9.10 (grelha mensal). A próxima release usa `versionCode` 13. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel), 9.7 e 9.8 (ver as limitações nas tarefas).
