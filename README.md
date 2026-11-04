@@ -5,14 +5,14 @@ App Android pessoal do casal (antes "Lista de Compras"): **Compras**, **Tarefas 
 ## Funcionalidades
 
 - Três separadores: **Compras** (abre por omissão), **Tarefas** ("Limpar grelhador", "Arrancar a relva"…) e **Calendário**.
-- Adição rápida de itens, toque para marcar, deslizar para apagar, "Limpar comprados / feitas". Quantidade opcional nas Compras.
-- **Calendário:** grelha mensal (segunda-feira primeiro) com pontos nas cores dos tipos de evento, e agenda do mês por baixo. Eventos com hora ou de dia inteiro, notas, e tipos criados e editados na app (nome e cor; os iniciais são Família, Veronica e João).
+- Adição rápida de itens, toque para marcar, **toque longo para editar** (nome e, nas Compras, quantidade), deslizar para apagar, "Limpar comprados / feitas". Quantidade opcional nas Compras. As edições também funcionam offline e chegam ao outro telemóvel.
+- **Calendário:** grelha mensal (segunda-feira primeiro) com pontos nas cores dos tipos de evento, e agenda do mês por baixo. A barra do mês (anterior / seguinte) fica fixa no topo enquanto se faz scroll. Eventos com hora ou de dia inteiro, notas, e tipos criados e editados na app (nome e cor; os iniciais são Família, Veronica e João).
 - **Lembretes de eventos:** à hora, 1 hora antes ou de 1 a 5 dias antes, com um alarme exato local que sobrevive a atualizações e a reinícios. Os eventos de dia inteiro avisam às 09:00.
 - **Avisos:** notificação quando o outro adiciona itens às Compras ou cria um evento, verificada em segundo plano cerca de cada 15 minutos (sem FCM, sem serviço em primeiro plano). Interruptores nas Definições.
 - **Offline-first:** a interface lê sempre da base de dados local. Tudo o que se faz sem rede fica numa fila e é enviado quando há ligação, sem duplicar itens.
 - **Tempo real:** o que uma pessoa altera aparece no outro telemóvel em segundos (Server-Sent Events).
 - Indicador de sincronização (Sincronizado / A sincronizar / Offline / Com erros), com o aviso para verificar o Tailscale quando não há ligação.
-- Modo escuro, tema dinâmico, suporte a leitores de ecrã (TalkBack: cada evento e cada dia da grelha são lidos por extenso) e ícone adaptativo/monocromático.
+- Modo escuro, tema dinâmico, suporte a leitores de ecrã (TalkBack: cada evento e cada dia da grelha são lidos por extenso; cada item tem as ações "Editar" e "Apagar") e ícone adaptativo/monocromático.
 - Interface em português europeu.
 
 ## Como funciona
@@ -26,7 +26,7 @@ UI (Compose) ─► ViewModel ─► Repositório ─► Room (fonte de verdade 
 ```
 
 - Os IDs dos itens são gerados no cliente (15 caracteres `[a-z0-9]`), para criar itens offline.
-- Cada escrita atualiza a tabela local e a fila de operações na mesma transação. A fila é fundida (`CREATE+UPDATE → CREATE`, `CREATE+DELETE → nada`) e enviada por ordem.
+- Cada escrita atualiza a tabela local e a fila de operações na mesma transação. A fila é fundida (`CREATE+UPDATE → CREATE`, `UPDATE+UPDATE → um só`, `CREATE+DELETE → nada`; editar um item ainda não enviado altera o próprio `CREATE`) e enviada por ordem.
 - O pull completo reconcilia o servidor com o local, sem apagar itens com operações pendentes.
 - O realtime é SSE (não WebSocket), com reconexão e *backoff*, e novo pull depois de cada reconexão.
 
@@ -73,7 +73,7 @@ Requisitos: JDK 17+ (ou o JBR do Android Studio) e o Android SDK.
    ```
 3. Instalar: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
-Os testes instrumentados correm numa base de dados em memória, instalam só a app `.debug` e não tocam nos dados da release. Cobrem a migração da base de dados, o ecrã do calendário (criar, editar, apagar, tipos, texto lido pelo TalkBack, offline por construção), o alarme de lembretes de ponta a ponta e as notificações.
+Os testes instrumentados correm numa base de dados em memória, instalam só a app `.debug` e não tocam nos dados da release. Cobrem a migração da base de dados, o ecrã do calendário (criar, editar, apagar, tipos, texto lido pelo TalkBack, offline por construção), a edição de itens (toque longo, quantidade, nome vazio), o alarme de lembretes de ponta a ponta e as notificações.
 
 ## Release assinada
 
@@ -95,4 +95,4 @@ Nada disto entra no repositório: URL do servidor, palavras-passe, keystore e `k
 
 ## Estado
 
-Fases 0 a 9 feitas: Compras, Tarefas, calendário com tipos, lembretes, avisos e grelha mensal; versão instalada 1.7.0. Por validar com **dois telemóveis ao mesmo tempo** (tempo real entre os dois, os avisos com um item ou evento real do outro) e com dados móveis ou rede instável; o modo escuro só foi visto no ecrã do calendário. Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Fases 0 a 9 feitas: Compras, Tarefas, calendário com tipos, lembretes, avisos e grelha mensal; edição de itens (9.11) e correção da barra do calendário (9.12); versão instalada 1.8.1. Por validar com **dois telemóveis ao mesmo tempo** (tempo real entre os dois, os avisos com um item ou evento real do outro) e com dados móveis ou rede instável; o modo escuro só foi visto no ecrã do calendário. Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
