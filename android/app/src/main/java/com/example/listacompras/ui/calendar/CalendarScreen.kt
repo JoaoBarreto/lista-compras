@@ -1,5 +1,6 @@
 package com.example.listacompras.ui.calendar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -66,7 +67,8 @@ fun CalendarScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            Column {
+            // Opaque, so the agenda scrolling underneath never shows through the month buttons.
+            Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
                 TopAppBar(
                     title = {
                         Column {
@@ -80,7 +82,7 @@ fun CalendarScreen(
                 )
                 tabs()
                 SyncBanner(state.syncStatus, onErrorClick = onErrorAcknowledged)
-                MonthBar(state, onPreviousMonth, onNextMonth, onToday, onManageTypes = { showTypes = true })
+                MonthBar(state, onPreviousMonth, onNextMonth)
             }
         },
         floatingActionButton = {
@@ -108,6 +110,8 @@ fun CalendarScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             item(key = "grid") {
+                // Not pinned: these two only matter when the grid is in view, and the bar stays slim.
+                MonthActions(onToday = onToday, onManageTypes = { showTypes = true })
                 MonthGrid(
                     month = state.month,
                     today = state.today,
@@ -169,27 +173,33 @@ fun CalendarScreen(
 
 private val FAB_CLEARANCE = 88.dp
 
+/** Pinned under the tabs: previous month, the month's name, next month. */
 @Composable
 private fun MonthBar(
     state: CalendarUiState,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onToday: () -> Unit,
-    onManageTypes: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onPreviousMonth) { Text(stringResource(R.string.calendar_previous_month)) }
-            Text(
-                CalendarFormats.month(state.month),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() },
-            )
-            TextButton(onClick = onNextMonth) { Text(stringResource(R.string.calendar_next_month)) }
-        }
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onToday) { Text(stringResource(R.string.calendar_today)) }
-            TextButton(onClick = onManageTypes) { Text(stringResource(R.string.calendar_manage_types)) }
-        }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+    ) {
+        TextButton(onClick = onPreviousMonth) { Text(stringResource(R.string.calendar_previous_month)) }
+        Text(
+            CalendarFormats.month(state.month),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.semantics { heading() },
+        )
+        TextButton(onClick = onNextMonth) { Text(stringResource(R.string.calendar_next_month)) }
+    }
+}
+
+/** First thing in the list, above the grid; scrolls away with it. */
+@Composable
+private fun MonthActions(onToday: () -> Unit, onManageTypes: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+        TextButton(onClick = onToday) { Text(stringResource(R.string.calendar_today)) }
+        TextButton(onClick = onManageTypes) { Text(stringResource(R.string.calendar_manage_types)) }
     }
 }
