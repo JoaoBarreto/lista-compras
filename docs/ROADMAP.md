@@ -182,6 +182,9 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - Toque longo numa linha abre um diálogo com o nome (e a quantidade, só nas Compras), já preenchido; "Guardar" fica desativado com o nome vazio. Para o TalkBack há a ação "Editar" ao lado de "Apagar". Offline-first: grava no Room e vai para a outbox como `PATCH` (`name`, `quantity`)
   - ✔ Quantidade apagada → o servidor também a apaga (envia-se `""`, não `null`); sem alterações não se grava nem envia nada; nas Tarefas o `PATCH` só leva o `name`; editar um item ainda não enviado funde-se no `CREATE`; o outro telemóvel não recebe aviso de "item novo" por causa de uma edição (os avisos usam `created`)
   - Estado: implementado em 2026-11-04, 231 testes unitários, `assembleDebug`, `compileDebugAndroidTestKotlin` e `lintDebug` passam. `ShoppingEditTest` (5 testes de interface) passa no telemóvel SM-S921B (toque longo, campos preenchidos, apagar quantidade, "Guardar" desativado com nome vazio, toque curto só marca, Tarefas sem quantidade). **Falta** a verificação com dados reais (edição entre os dois telemóveis, offline, TalkBack) e a release (v13 / 1.8.0).
+- [x] **9.12** Calendário: barra do mês opaca (correção pedida pelo utilizador)
+  - A agenda via-se por baixo de "Mês anterior / Mês seguinte" ao fazer scroll; o topo passou a ter fundo sólido e "Hoje" / "Gerir tipos" foram para o início da lista (a barra fixa ficou só com mês anterior, nome e mês seguinte)
+  - Estado: feito em 2026-11-04 (v14, 1.8.1, instalada por cima da v13 sem perder dados). Testes de interface passam; no telemóvel, com a grelha a deslizar por baixo, a barra fica limpa.
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 
