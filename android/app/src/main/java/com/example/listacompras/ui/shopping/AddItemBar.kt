@@ -37,6 +37,9 @@ import com.example.listacompras.R
 /** Longest quantity the server accepts (`items.quantity`, see DATA_MODEL). */
 const val MAX_QUANTITY_LENGTH = 30
 
+/** Longest name the server accepts (`items.name`, see DATA_MODEL). */
+const val MAX_NAME_LENGTH = 100
+
 /**
  * Fixed quick-add field. Keeps focus after adding so several items can be typed in a row.
  * With a non-null [quantityLabel] a second, optional field is shown; blank means no quantity.

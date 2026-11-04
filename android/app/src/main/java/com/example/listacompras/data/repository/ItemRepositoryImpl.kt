@@ -6,6 +6,7 @@ import com.example.listacompras.data.local.entity.ItemEntity
 import com.example.listacompras.data.local.entity.OpType
 import com.example.listacompras.data.local.entity.PendingOpEntity
 import com.example.listacompras.data.remote.dto.CheckedPatch
+import com.example.listacompras.data.remote.dto.EditPatch
 import com.example.listacompras.domain.model.Category
 import com.example.listacompras.domain.model.ListKind
 import com.example.listacompras.domain.model.ShoppingItem
@@ -68,6 +69,29 @@ class ItemRepositoryImpl(
         }
         syncScheduler.requestSync()
         return true
+    }
+
+    override suspend fun update(id: String, name: String, quantity: String?) {
+        val newName = name.trim()
+        if (newName.isEmpty()) return
+        val newQuantity = quantity?.trim()
+        val now = clock.millis()
+        val changed = transactions.run {
+            val item = itemDao.getById(id) ?: return@run false
+            val quantityChanged = newQuantity != null && (newQuantity.ifEmpty { null }) != item.quantity
+            if (newName == item.name && !quantityChanged) return@run false
+            itemDao.upsert(
+                item.copy(
+                    name = newName,
+                    quantity = if (newQuantity == null) item.quantity else newQuantity.ifEmpty { null },
+                    updatedAt = now,
+                    syncState = SyncState.PENDING,
+                ),
+            )
+            enqueue(id, OpType.UPDATE, json.encodeToString(EditPatch(newName, newQuantity)), now)
+            true
+        }
+        if (changed) syncScheduler.requestSync()
     }
 
     override suspend fun setChecked(id: String, checked: Boolean) {

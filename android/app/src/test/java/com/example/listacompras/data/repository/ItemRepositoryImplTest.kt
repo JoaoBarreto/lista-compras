@@ -94,6 +94,62 @@ class ItemRepositoryImplTest {
     }
 
     @Test
+    fun `update renames, changes the quantity and queues a PATCH with both`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+        val before = scheduler.requests
+
+        repo.update(id, "  Leite magro ", " 6 ")
+
+        val item = itemDao.items.value.getValue(id)
+        assertEquals("Leite magro", item.name)
+        assertEquals("6", item.quantity)
+        assertEquals(SyncState.PENDING, item.syncState)
+        val op = opDao.ops.last()
+        assertEquals(OpType.UPDATE, op.type)
+        assertEquals("""{"name":"Leite magro","quantity":"6"}""", op.payloadJson)
+        assertEquals(before + 1, scheduler.requests)
+    }
+
+    @Test
+    fun `update with a blank quantity clears it and sends an explicit empty string`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+
+        repo.update(id, "Leite", "  ")
+
+        assertNull(itemDao.items.value.getValue(id).quantity)
+        assertEquals("""{"name":"Leite","quantity":""}""", opDao.ops.last().payloadJson)
+    }
+
+    @Test
+    fun `update with a null quantity leaves it alone and sends only the name`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+
+        repo.update(id, "Leite magro", null)
+
+        assertEquals("2", itemDao.items.value.getValue(id).quantity)
+        assertEquals("""{"name":"Leite magro"}""", opDao.ops.last().payloadJson)
+    }
+
+    @Test
+    fun `update that changes nothing, has a blank name or an unknown id does nothing`() = runTest {
+        addMilk()
+        val id = itemDao.items.value.keys.single()
+        val ops = opDao.ops.size
+        val before = scheduler.requests
+
+        repo.update(id, " Leite ", "2")
+        repo.update(id, "Leite", null)
+        repo.update(id, "   ", "2")
+        repo.update("missing", "Leite", "2")
+
+        assertEquals(ops, opDao.ops.size)
+        assertEquals(before, scheduler.requests)
+    }
+
+    @Test
     fun `setChecked true updates the item and queues an UPDATE with checked_by`() = runTest {
         addMilk()
         val id = itemDao.items.value.keys.single()

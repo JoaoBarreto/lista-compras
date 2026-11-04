@@ -39,6 +39,9 @@ class ShoppingViewModelTest {
             calls += "add:$kind:$name" + (quantity?.let { ":$it" } ?: "")
             return true
         }
+        override suspend fun update(id: String, name: String, quantity: String?) {
+            calls += "update:$id:$name:${quantity ?: "-"}"
+        }
         override suspend fun setChecked(id: String, checked: Boolean) { calls += "check:$id:$checked" }
         override suspend fun delete(id: String) { calls += "delete:$id" }
         override suspend fun clearChecked(kind: ListKind) { calls += "clear:$kind" }
@@ -139,6 +142,24 @@ class ShoppingViewModelTest {
         vm.onAdd("  leite ")
 
         assertEquals(listOf("add:SHOPPING:leite"), repo.calls)
+    }
+
+    @Test
+    fun `edit trims, ignores blank names, caps lengths and keeps tasks without quantity`() = runTest {
+        val shopping = ShoppingViewModel(ListKind.SHOPPING, repo, lists, sync)
+        shopping.onEdit("a", "  leite ", " 2 L ")
+        shopping.onEdit("b", "ovos", "   ")
+        shopping.onEdit("c", "   ", "3")
+        shopping.onEdit("d", "n".repeat(120), "x".repeat(40))
+        ShoppingViewModel(ListKind.TASKS, repo, lists, sync).onEdit("e", "Limpar", "3")
+
+        assertEquals(
+            listOf(
+                "update:a:leite:2 L", "update:b:ovos:", "update:d:" + "n".repeat(100) + ":" + "x".repeat(30),
+                "update:e:Limpar:-",
+            ),
+            repo.calls,
+        )
     }
 
     @Test

@@ -22,6 +22,10 @@
     <string name="shopping_quantity_description">Quantidade (opcional)</string>
     <string name="shopping_add_button">Adicionar</string>
     <string name="shopping_delete">Apagar</string>
+    <string name="shopping_edit">Editar</string>
+    <string name="shopping_edit_title">Editar item</string>
+    <string name="shopping_edit_save">Guardar</string>
+    <string name="shopping_edit_cancel">Cancelar</string>
     <string name="shopping_button_logout">Terminar sessão</string>
 
     <string name="sync_status_synced">Sincronizado</string>

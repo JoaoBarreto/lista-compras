@@ -34,6 +34,7 @@ class ShoppingAddWithoutListTest {
             onAdd = { name, quantity -> added += name to quantity },
             onCheckedChange = { _, _ -> },
             onDelete = {},
+            onEdit = { _, _, _ -> },
             onClearChecked = {},
             onErrorAcknowledged = {},
             onOpenSettings = {},

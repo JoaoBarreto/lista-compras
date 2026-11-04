@@ -57,13 +57,18 @@ fun SwipeableRow(
     item: ShoppingItem,
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
+    onEdit: (ShoppingItem) -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
     val deleteLabel = stringResource(R.string.shopping_delete)
+    val editLabel = stringResource(R.string.shopping_edit)
     SwipeToDismissBox(
         // Swipes are taken by screen readers, so deleting also has to be a custom action.
         modifier = Modifier.semantics {
-            customActions = listOf(CustomAccessibilityAction(deleteLabel) { onDelete(item.id); true })
+            customActions = listOf(
+                CustomAccessibilityAction(editLabel) { onEdit(item); true },
+                CustomAccessibilityAction(deleteLabel) { onDelete(item.id); true },
+            )
         },
         state = dismissState,
         enableDismissFromStartToEnd = false,
@@ -85,7 +90,7 @@ fun SwipeableRow(
             }
         },
     ) {
-        ShoppingItemRow(item = item, onCheckedChange = { onCheckedChange(item.id, it) })
+        ShoppingItemRow(item = item, onCheckedChange = { onCheckedChange(item.id, it) }, onEdit = { onEdit(item) })
     }
 }
 

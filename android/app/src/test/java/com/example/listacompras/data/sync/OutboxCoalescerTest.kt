@@ -57,6 +57,31 @@ class OutboxCoalescerTest {
     }
 
     @Test
+    fun `CREATE plus an edit merges name and quantity, and an emptied quantity is omitted`() {
+        val withQuantity = create.replace(""""name":"Leite",""", """"name":"Leite","quantity":"2",""")
+        val rename = op("a", OpType.UPDATE, """{"name":"Leite magro","quantity":"6"}""")
+        val clear = op("a", OpType.UPDATE, """{"name":"Leite magro","quantity":""}""")
+
+        val renamed = coalescer.coalesce(listOf(op("a", OpType.CREATE, withQuantity), rename)).single()
+        val cleared = coalescer.coalesce(listOf(op("a", OpType.CREATE, withQuantity), rename, clear)).single()
+
+        val dto = json.decodeFromString<ItemDto>(renamed.payloadJson)
+        assertEquals("Leite magro", dto.name)
+        assertEquals("6", dto.quantity)
+        assertEquals("Leite magro", json.decodeFromString<ItemDto>(cleared.payloadJson).name)
+        assertTrue("quantity" !in cleared.payloadJson)
+    }
+
+    @Test
+    fun `UPDATE edits keep an emptied quantity so the server clears it`() {
+        val result = coalescer.coalesce(
+            listOf(op("a", OpType.UPDATE, """{"name":"X","quantity":"1"}"""), op("a", OpType.UPDATE, """{"name":"X","quantity":""}""")),
+        )
+
+        assertEquals("""{"name":"X","quantity":""}""", result.single().payloadJson)
+    }
+
+    @Test
     fun `CREATE plus DELETE leaves nothing`() {
         assertTrue(coalescer.coalesce(listOf(op("a", OpType.CREATE, create), op("a", OpType.DELETE))).isEmpty())
     }

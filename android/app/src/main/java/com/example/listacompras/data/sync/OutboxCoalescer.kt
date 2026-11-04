@@ -87,7 +87,12 @@ class OutboxCoalescer(
         if (later.isEmpty()) return base.payloadJson
         val merged = LinkedHashMap<String, JsonElement>()
         (listOf(base) + later).forEach { merged.putAll(parse(it.payloadJson)) }
-        if (dropEmptyCheckedBy && (merged[CHECKED_BY] as? JsonPrimitive)?.content == "") merged.remove(CHECKED_BY)
+        // Same for `quantity`: an edit that cleared it, merged into a not-yet-sent CREATE, just omits it.
+        if (dropEmptyCheckedBy) {
+            listOf(CHECKED_BY, QUANTITY).forEach { key ->
+                if ((merged[key] as? JsonPrimitive)?.content == "") merged.remove(key)
+            }
+        }
         return JsonObject(merged).toString()
     }
 
@@ -98,5 +103,6 @@ class OutboxCoalescer(
 
     private companion object {
         const val CHECKED_BY = "checked_by"
+        const val QUANTITY = "quantity"
     }
 }

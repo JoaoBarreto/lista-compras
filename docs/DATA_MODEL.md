@@ -147,6 +147,7 @@ DAOs: `ItemDao`, `PendingOpDao` (com `updatePayload`, usado pela coalescência),
 | `add` | insere com `syncState = PENDING` | `CREATE`, `ItemDto` completo (sem campos nulos) |
 | `setChecked(true)` | `checked`, `checkedBy = userId`, `PENDING` | `UPDATE`, `{"checked":true,"checked_by":"<uid>"}` |
 | `setChecked(false)` | `checked = false`, `checkedBy = null`, `PENDING` | `UPDATE`, `{"checked":false,"checked_by":""}` (string vazia: um `null` seria omitido e o servidor manteria o valor antigo) |
+| `update` | `name` (e `quantity`, se não for nula) alterados, `PENDING`; sem alterações ou com nome vazio não faz nada | `UPDATE`, `{"name":"…","quantity":"…"}`; quantidade vazia envia `""` (apaga no servidor); nas Tarefas só `{"name":"…"}`. O `OutboxCoalescer` omite `quantity` vazia ao fundir num `CREATE` ainda não enviado |
 | `delete` | apaga a linha | `DELETE`, `{}` (o id vai em `itemId`) |
 | `clearChecked` | apaga os marcados da lista ativa | um `DELETE` por item |
 

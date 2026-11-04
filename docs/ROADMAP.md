@@ -178,6 +178,11 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
   - ✔ A grelha aparece também em meses sem eventos; TalkBack lê a data completa, "hoje" e o número de eventos de cada dia, e anuncia o dia selecionado; a cor nunca é a única pista (a agenda por baixo diz o tipo)
   - Estado: feito em 2026-11-03 (v12, 1.7.0, instalada). 224 testes unitários (células do mês: domingo com seis espaços e seis linhas, fevereiro de 28 dias a começar à segunda, cada dia na coluna do seu dia da semana; seleção e passagem de mês com o dia ajustado, 31 jan → 28 fev). No telemóvel: `CalendarScreenTest` (9 testes, os 6 anteriores sem alterações) e verificação visual por captura de ecrã, em modo escuro.
 
+- [ ] **9.11** Editar itens das Compras e das Tarefas
+  - Toque longo numa linha abre um diálogo com o nome (e a quantidade, só nas Compras), já preenchido; "Guardar" fica desativado com o nome vazio. Para o TalkBack há a ação "Editar" ao lado de "Apagar". Offline-first: grava no Room e vai para a outbox como `PATCH` (`name`, `quantity`)
+  - ✔ Quantidade apagada → o servidor também a apaga (envia-se `""`, não `null`); sem alterações não se grava nem envia nada; nas Tarefas o `PATCH` só leva o `name`; editar um item ainda não enviado funde-se no `CREATE`; o outro telemóvel não recebe aviso de "item novo" por causa de uma edição (os avisos usam `created`)
+  - Estado: implementado em 2026-11-04, 231 testes unitários, `assembleDebug`, `compileDebugAndroidTestKotlin` e `lintDebug` passam. `ShoppingEditTest` (5 testes de interface) passa no telemóvel SM-S921B (toque longo, campos preenchidos, apagar quantidade, "Guardar" desativado com nome vazio, toque curto só marca, Tarefas sem quantidade). **Falta** a verificação com dados reais (edição entre os dois telemóveis, offline, TalkBack) e a release (v13 / 1.8.0).
+
 ## Fase 7 · Ideias futuras (fora do MVP)
 
 - [ ] Mais listas além de Compras e Tarefas (supermercado, farmácia…) com criação livre (a versão mínima, só Compras + Tarefas, é a Fase 8)
@@ -185,6 +190,6 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [ ] Sugestões a partir do histórico (autocomplete)
 - [ ] Notificação quando o outro conclui itens (a de "adicionou" está na Fase 9)
 - [ ] Eventos recorrentes (anuais, semanais) no calendário
-- [ ] Editar a quantidade de um item já existente
+- [x] Editar a quantidade de um item já existente (feito na 9.11)
 - [ ] Widget no ecrã inicial
 - [ ] Partilha de texto para a app ("adicionar à lista")

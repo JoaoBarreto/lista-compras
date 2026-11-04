@@ -51,6 +51,14 @@ class ShoppingViewModel @AssistedInject constructor(
         }
     }
 
+    /** Blank names are ignored; the quantity is only edited on the shopping list (tasks keep none). */
+    fun onEdit(id: String, name: String, quantity: String = "") {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        val qty = if (kind == ListKind.SHOPPING) quantity.trim().take(MAX_QUANTITY_LENGTH) else null
+        viewModelScope.launch { itemRepository.update(id, trimmed.take(MAX_NAME_LENGTH), qty) }
+    }
+
     fun onCheckedChange(id: String, checked: Boolean) {
         viewModelScope.launch { itemRepository.setChecked(id, checked) }
     }

@@ -81,6 +81,7 @@ fun ShoppingRoute(
                 onAdd = viewModel::onAdd,
                 onCheckedChange = viewModel::onCheckedChange,
                 onDelete = viewModel::onDelete,
+                onEdit = viewModel::onEdit,
                 onClearChecked = viewModel::onClearChecked,
                 onErrorAcknowledged = viewModel::onErrorAcknowledged,
                 onOpenSettings = { showSettings = true },

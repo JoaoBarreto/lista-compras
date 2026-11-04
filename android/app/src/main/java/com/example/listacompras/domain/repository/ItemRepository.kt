@@ -17,6 +17,12 @@ interface ItemRepository {
      */
     suspend fun add(kind: ListKind, name: String, quantity: String? = null, category: Category? = null): Boolean
 
+    /**
+     * Renames an item and sets its quantity. A blank [quantity] clears it; null leaves it untouched
+     * (lists without quantities). Does nothing for an unknown id, a blank name or an unchanged item.
+     */
+    suspend fun update(id: String, name: String, quantity: String?)
+
     suspend fun setChecked(id: String, checked: Boolean)
 
     suspend fun delete(id: String)

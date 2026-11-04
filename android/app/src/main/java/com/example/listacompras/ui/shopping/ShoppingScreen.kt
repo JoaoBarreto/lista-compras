@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -32,12 +33,16 @@ fun ShoppingScreen(
     onAdd: (String, String) -> Unit,
     onCheckedChange: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
+    onEdit: (id: String, name: String, quantity: String) -> Unit,
     onClearChecked: () -> Unit,
     onErrorAcknowledged: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    // Only the id is kept (it survives rotation); the dialog closes by itself if the item goes away.
+    var editingId by rememberSaveable { mutableStateOf<String?>(null) }
+    val editing = editingId?.let { id -> (state.toBuy + state.bought).firstOrNull { it.id == id } }
     // Only items added from this screen scroll into view; ones arriving from the other phone must not.
     var scrollToNewItem by remember { mutableStateOf(false) }
     LaunchedEffect(state.toBuy.size) {
@@ -78,6 +83,16 @@ fun ShoppingScreen(
             )
         },
     ) { innerPadding ->
+        editing?.let { item ->
+            ItemEditDialog(
+                item = item,
+                showQuantity = texts.quantityLabel != null,
+                nameLabel = texts.addLabel,
+                quantityLabel = texts.quantityLabel,
+                onSave = { name, quantity -> onEdit(item.id, name, quantity); editingId = null },
+                onDismiss = { editingId = null },
+            )
+        }
         // Nothing until the local database has answered, so the empty message does not flash.
         if (state.isLoading) return@Scaffold
         LazyColumn(
@@ -97,7 +112,7 @@ fun ShoppingScreen(
             if (state.toBuy.isNotEmpty()) {
                 item(key = "header-to-buy") { SectionHeader(texts.sectionOpen) }
                 items(state.toBuy, key = { it.id }) { item ->
-                    SwipeableRow(item, onCheckedChange, onDelete)
+                    SwipeableRow(item, onCheckedChange, onDelete) { editingId = it.id }
                 }
             }
             if (state.bought.isNotEmpty()) {
@@ -109,7 +124,7 @@ fun ShoppingScreen(
                     )
                 }
                 items(state.bought, key = { it.id }) { item ->
-                    SwipeableRow(item, onCheckedChange, onDelete)
+                    SwipeableRow(item, onCheckedChange, onDelete) { editingId = it.id }
                 }
             }
         }
