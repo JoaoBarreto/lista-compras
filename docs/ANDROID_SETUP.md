@@ -118,3 +118,13 @@ Se o sync em segundo plano falhar, verificar em Definições → Bateria que a a
   adb install -r app/build/outputs/apk/release/app-release.apk
   ```
 - Primeira instalação: desinstalar a app debug antiga (`com.example.listacompras`); esperar que o estado seja "Sincronizado" antes, para não perder alterações pendentes.
+
+
+## JDK e adb nesta máquina
+
+Não há Java nem `adb` no PATH do anfitrião. Estão na home do distrobox `androidstudio`:
+
+- `JAVA_HOME=/home/behonder/distrobox/home/androidstudio/android-studio/jbr`
+- `adb`: `/home/behonder/distrobox/home/androidstudio/Android/Sdk/platform-tools/adb`
+
+Basta exportar `JAVA_HOME` e correr `./gradlew` no anfitrião (sem `distrobox enter`).

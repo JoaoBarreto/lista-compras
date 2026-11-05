@@ -43,6 +43,9 @@ fun ShoppingScreen(
     // Only the id is kept (it survives rotation); the dialog closes by itself if the item goes away.
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = editingId?.let { id -> (state.toBuy + state.bought).firstOrNull { it.id == id } }
+    // Same pattern for the delete confirmation; it also closes if the other phone deletes the item first.
+    var deletingId by rememberSaveable { mutableStateOf<String?>(null) }
+    val deleting = deletingId?.let { id -> (state.toBuy + state.bought).firstOrNull { it.id == id } }
     // Only items added from this screen scroll into view; ones arriving from the other phone must not.
     var scrollToNewItem by remember { mutableStateOf(false) }
     LaunchedEffect(state.toBuy.size) {
@@ -93,6 +96,13 @@ fun ShoppingScreen(
                 onDismiss = { editingId = null },
             )
         }
+        deleting?.let { item ->
+            ItemDeleteDialog(
+                itemName = item.name,
+                onConfirm = { onDelete(item.id); deletingId = null },
+                onDismiss = { deletingId = null },
+            )
+        }
         // Nothing until the local database has answered, so the empty message does not flash.
         if (state.isLoading) return@Scaffold
         LazyColumn(
@@ -112,7 +122,7 @@ fun ShoppingScreen(
             if (state.toBuy.isNotEmpty()) {
                 item(key = "header-to-buy") { SectionHeader(texts.sectionOpen) }
                 items(state.toBuy, key = { it.id }) { item ->
-                    SwipeableRow(item, onCheckedChange, onDelete) { editingId = it.id }
+                    SwipeableRow(item, onCheckedChange, { deletingId = it }) { editingId = it.id }
                 }
             }
             if (state.bought.isNotEmpty()) {
@@ -124,7 +134,7 @@ fun ShoppingScreen(
                     )
                 }
                 items(state.bought, key = { it.id }) { item ->
-                    SwipeableRow(item, onCheckedChange, onDelete) { editingId = it.id }
+                    SwipeableRow(item, onCheckedChange, { deletingId = it }) { editingId = it.id }
                 }
             }
         }

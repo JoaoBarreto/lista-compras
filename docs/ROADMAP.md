@@ -1,10 +1,10 @@
 # Roadmap
 
 > ## PROJETO FECHADO por ora (2026-11-04)
-> - A release v14 (1.8.1) foi instalada no telemóvel da esposa: instalou, sincronizou e está tudo ok. Testes dados por concluídos e projeto fechado a pedido do utilizador, "pelo menos para já". O que ficou `[ ]` (9.3, segundo telemóvel, modo offline, Fase 7) fica adiado, não em curso.
+> - A release v15 (1.9.0, confirmação antes de apagar, 9.13) está instalada só no telemóvel do utilizador; o da esposa continua na v14 (1.8.1), instalada e a funcionar: instalou, sincronizou e está tudo ok. Testes dados por concluídos e projeto fechado a pedido do utilizador, "pelo menos para já". O que ficou `[ ]` (9.3, segundo telemóvel, modo offline, Fase 7) fica adiado, não em curso.
 
 > ## Ponto de situação (2026-11-03) · retomar aqui
-> - **Release instalada/mais recente:** v12 (`versionCode` 12, 1.7.0), com 9.1 a 9.10 (grelha mensal). A próxima release usa `versionCode` 13. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (receita de build na memória do assistente: Gradle dentro do distrobox `androidstudio`). A próxima release usa `versionCode` 10.
+> - **Release instalada/mais recente:** v15 (`versionCode` 15, 1.9.0), com 9.1 a 9.13. A próxima release usa `versionCode` 16. Instalar com `adb install -r android/app/build/outputs/apk/release/app-release.apk` (JDK e `adb` do distrobox `androidstudio`: ver [ANDROID_SETUP](ANDROID_SETUP.md)).
 > - **Feitas e confirmadas pelo utilizador:** 9.1, 9.2, 9.2b, 9.4 (migração Room testada no telemóvel com dados reais), 9.5 (servidor verificado por API com as duas contas), 9.6 (sem telemóvel), 9.7 e 9.8 (ver as limitações nas tarefas).
 > - **Por testar quando houver o segundo telemóvel:** realtime entre os dois (Compras, Tarefas e Calendário); as notificações da 9.3 (continua `[ ]`: aviso com a app fechada em cerca de 15 min, itens vistos não avisam, interruptor nas Definições, permissão pedida uma vez); modo offline (avião) nas listas e no calendário; e a lista de verificação da 6.2 (criar offline → ligar rede → aparece no outro; apagar offline; dois a editar o mesmo item; dados móveis e rede instável).
 > - **Estado da Fase 9:** concluída, exceto a 9.3 (precisa de um item real adicionado pelo outro telemóvel com a app fechada; por isso continua `[ ]`). Fechadas a pedido: 6.4 (testada no telemóvel) e 6.2 (sem o teste em dispositivo, ver a tarefa). A seguir: escolha do utilizador (extras possíveis: itens da Fase 7).
@@ -188,6 +188,10 @@ Decisões do utilizador (2026-11-02), ver [DECISIONS](DECISIONS.md): a app passa
 - [x] **9.12** Calendário: barra do mês opaca (correção pedida pelo utilizador)
   - A agenda via-se por baixo de "Mês anterior / Mês seguinte" ao fazer scroll; o topo passou a ter fundo sólido e "Hoje" / "Gerir tipos" foram para o início da lista (a barra fixa ficou só com mês anterior, nome e mês seguinte)
   - Estado: feito em 2026-11-04 (v14, 1.8.1, instalada por cima da v13 sem perder dados). Testes de interface passam; no telemóvel, com a grelha a deslizar por baixo, a barra fica limpa.
+- [x] **9.13** Confirmar antes de apagar um item das Compras ou das Tarefas
+  - Deslizar (e a ação "Apagar" do TalkBack) abre um diálogo «Apagar item?» com o nome; só "Apagar" no diálogo apaga, "Cancelar" mantém o item e a linha volta ao sítio. Se o outro telemóvel apagar o item com o diálogo aberto, este fecha-se. Fora do âmbito (decisão do utilizador): "Limpar comprados/feitas", eventos e tipos do calendário
+  - ✔ Deslizar só pergunta e não apaga; Cancelar mantém o item; confirmar chama `onDelete` uma vez com o id certo
+  - Estado: implementado em 2026-11-05 (v15, 1.9.0, release instalada por cima da v14 no SM-S921B, versão confirmada com `dumpsys`). Antes de acrescentar a verificação de posição, `ShoppingDeleteConfirmTest` (2 testes) e `ShoppingEditTest` (5) passaram no telemóvel; `assembleDebug`, `testDebugUnitTest`, `lintDebug` e `compileDebugAndroidTestKotlin` passam. **Por confirmar:** que a linha volta ao sítio depois de Cancelar (o teste novo que mede a posição não correu porque o telemóvel ficou bloqueado com PIN; o utilizador confirma à mão); TalkBack; segundo telemóvel não atualizado.
 
 ## Fase 7 · Ideias futuras (fora do MVP)
 

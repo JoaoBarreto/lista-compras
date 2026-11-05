@@ -14,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -60,6 +62,7 @@ fun SwipeableRow(
     onEdit: (ShoppingItem) -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
+    val scope = rememberCoroutineScope()
     val deleteLabel = stringResource(R.string.shopping_delete)
     val editLabel = stringResource(R.string.shopping_edit)
     SwipeToDismissBox(
@@ -72,8 +75,13 @@ fun SwipeableRow(
         },
         state = dismissState,
         enableDismissFromStartToEnd = false,
-        // The row leaves the list through the database, so the dismissed state is never kept.
-        onDismiss = { value -> if (value == SwipeToDismissBoxValue.EndToStart) onDelete(item.id) },
+        // Deleting needs confirmation, so the row snaps back; it only leaves through the database.
+        onDismiss = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onDelete(item.id)
+                scope.launch { dismissState.reset() }
+            }
+        },
         backgroundContent = {
             Box(
                 contentAlignment = Alignment.CenterEnd,

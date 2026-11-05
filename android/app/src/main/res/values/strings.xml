@@ -22,6 +22,8 @@
     <string name="shopping_quantity_description">Quantidade (opcional)</string>
     <string name="shopping_add_button">Adicionar</string>
     <string name="shopping_delete">Apagar</string>
+    <string name="shopping_delete_title">Apagar item?</string>
+    <string name="shopping_delete_message">«%1$s» vai ser apagado para os dois.</string>
     <string name="shopping_edit">Editar</string>
     <string name="shopping_edit_title">Editar item</string>
     <string name="shopping_edit_save">Guardar</string>

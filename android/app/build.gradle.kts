@@ -35,8 +35,8 @@ android {
         applicationId = "com.joaobarreto.listacompras"
         minSdk = 26
         targetSdk = 37
-        versionCode = 14
-        versionName = "1.8.1"
+        versionCode = 15
+        versionName = "1.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
